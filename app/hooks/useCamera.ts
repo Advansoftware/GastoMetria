@@ -3,6 +3,7 @@ import { Alert } from 'react-native';
 import { CameraView, CameraType, useCameraPermissions, BarcodeScanningResult, BarcodeSettings } from 'expo-camera';
 import useImageProcessing from './useImageProcessing';
 import useAIProcessing from './useAIProcessing';
+import useQRCodeProcessing from './useQRCodeProcessing';
 import { ProcessedText } from '../types/camera';
 import { isNFCeUrl, extractNFCeData } from '../services/nfceService';
 
@@ -12,6 +13,7 @@ function useCamera() {
   const cameraRef = useRef<CameraView>(null);
   const { processImage } = useImageProcessing();
   const { processarTextoComIA } = useAIProcessing();
+  const { processQRCode } = useQRCodeProcessing();
   const [isProcessingImage, setIsProcessingImage] = useState(false);
   const [isProcessingIA, setIsProcessingIA] = useState(false);
   const [isScanning, setIsScanning] = useState(true);
@@ -28,7 +30,10 @@ function useCamera() {
         `Data: ${data}`,
         '',
         'Produtos:',
-        ...produtos.map(p => `${p.nome}: ${p.quantidade}x R$ ${p.valor_unitario.toFixed(2)} = R$ ${p.valor_pago.toFixed(2)}`),
+        ...produtos.map(p => {
+          const valorUnitario = p.valor_unitario || p.valor_pago / p.quantidade;
+          return `${p.nome}: ${p.quantidade}x R$ ${valorUnitario.toFixed(2)} = R$ ${p.valor_pago.toFixed(2)}`;
+        }),
         '',
         `Total: R$ ${total_devido.toFixed(2)}`
       ];
@@ -50,21 +55,15 @@ function useCamera() {
   const handleBarcodeScanned = async ({ data }: BarcodeScanningResult) => {
     setIsScanning(false);
     try {
-      // Se for URL da NFCe, processa diretamente sem IA
-      if (isNFCeUrl(data)) {
-        setIsProcessingImage(true);
-        const nfceData = await extractNFCeData(data);
-        if (nfceData) {
-          handleProcessedText({ 
-            fullText: data,
-            blocks: [],
-            analiseIA: nfceData
-          });
-          return;
-        }
+      setIsProcessingImage(true);
+      const qrResult = await processQRCode(data);
+      
+      if (qrResult) {
+        handleProcessedText(qrResult);
+        return;
       }
 
-      // Só usa IA se não for NFCe ou se falhar o processamento da NFCe
+      // Se não processou via QR code, tenta com IA
       setIsProcessingIA(true);
       const analiseIA = await processarTextoComIA(data);
       handleProcessedText({ 

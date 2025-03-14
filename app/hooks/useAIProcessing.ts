@@ -1,4 +1,4 @@
-import type { AIAnalysis } from "../types/camera";
+import type { AIAnalysis, Produto } from "../types/camera";
 import { openai, isDevEnv } from "../config/openai";
 
 const useAIProcessing = () => {
@@ -96,11 +96,16 @@ Lembre-se:
                           type: "number",
                           description: "Quantidade como número (ex: 1, 2.5)",
                         },
+                        valor_unitario: {
+                          type: "number",
+                          description: "Valor unitário do produto com 2 casas decimais",
+                        },
                         valor_pago: {
                           type: "number",
-                          description: "Valor pago pelo produto com 2 casas decimais",
+                          description: "Valor total pago pelo produto com 2 casas decimais",
                         },
                       },
+                      required: ["nome", "quantidade", "valor_unitario", "valor_pago"]
                     },
                   },
                   total_devido: {
@@ -122,7 +127,14 @@ Lembre-se:
         throw new Error("Resposta vazia da IA");
       }
 
+      // Após receber a resposta da IA, garantir que valor_unitario existe
       const resultado = JSON.parse(toolCall.function.arguments) as AIAnalysis;
+      
+      // Calculando valor_unitario se não existir, agora com tipo definido
+      resultado.produtos = resultado.produtos.map((produto: Produto) => ({
+        ...produto,
+        valor_unitario: produto.valor_unitario || Number((produto.valor_pago / produto.quantidade).toFixed(2))
+      }));
 
       // Validação extra (opcional)
       if (!resultado.estabelecimento || !resultado.data || !resultado.produtos.length || !resultado.total_devido) {

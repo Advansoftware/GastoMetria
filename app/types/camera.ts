@@ -12,6 +12,8 @@ export interface ResultadoAnalise {
   total_devido: number;
 }
 
+export type AIAnalysis = ResultadoAnalise;
+
 export interface ProcessedText {
   fullText: string;
   blocks: string[];
