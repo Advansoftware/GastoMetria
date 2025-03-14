@@ -1,10 +1,11 @@
 export interface Produto {
   nome: string;
   quantidade: number;
+  valor_unitario: number;
   valor_pago: number;
 }
 
-export interface AIAnalysis {
+export interface ResultadoAnalise {
   estabelecimento: string;
   data: string;
   produtos: Produto[];
@@ -14,7 +15,7 @@ export interface AIAnalysis {
 export interface ProcessedText {
   fullText: string;
   blocks: string[];
-  analiseIA?: AIAnalysis;
+  analiseIA?: ResultadoAnalise;
 }
 
 // Necessário para o Expo Router

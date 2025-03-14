@@ -4,6 +4,7 @@ import { CameraView, CameraType, useCameraPermissions, BarcodeScanningResult, Ba
 import useImageProcessing from './useImageProcessing';
 import useAIProcessing from './useAIProcessing';
 import { ProcessedText } from '../types/camera';
+import { isNFCeUrl, extractNFCeData } from '../services/nfceService';
 
 function useCamera() {
   const [permission, requestPermission] = useCameraPermissions();
@@ -27,7 +28,7 @@ function useCamera() {
         `Data: ${data}`,
         '',
         'Produtos:',
-        ...produtos.map(p => `${p.nome}: ${p.quantidade}x R$ ${p.valor_pago.toFixed(2)}`),
+        ...produtos.map(p => `${p.nome}: ${p.quantidade}x R$ ${p.valor_unitario.toFixed(2)} = R$ ${p.valor_pago.toFixed(2)}`),
         '',
         `Total: R$ ${total_devido.toFixed(2)}`
       ];
@@ -49,17 +50,33 @@ function useCamera() {
   const handleBarcodeScanned = async ({ data }: BarcodeScanningResult) => {
     setIsScanning(false);
     try {
+      // Se for URL da NFCe, processa diretamente sem IA
+      if (isNFCeUrl(data)) {
+        setIsProcessingImage(true);
+        const nfceData = await extractNFCeData(data);
+        if (nfceData) {
+          handleProcessedText({ 
+            fullText: data,
+            blocks: [],
+            analiseIA: nfceData
+          });
+          return;
+        }
+      }
+
+      // Só usa IA se não for NFCe ou se falhar o processamento da NFCe
       setIsProcessingIA(true);
       const analiseIA = await processarTextoComIA(data);
       handleProcessedText({ 
         fullText: data, 
         analiseIA,
-        blocks: [] // Adicionando a propriedade blocks obrigatória
+        blocks: []
       });
     } catch (e) {
       console.error("Erro ao processar QR code:", e);
       Alert.alert("Erro", "Não foi possível processar o QR code");
     } finally {
+      setIsProcessingImage(false);
       setIsProcessingIA(false);
       setIsScanning(true);
     }

@@ -20,10 +20,10 @@ const useQRCodeProcessing = () => {
           {
             nome: "Produto do QR Code",
             quantidade: 1,
-            valor_pago: 10.00
+            valor_pago: 14.70
           }
         ],
-        total_devido: 10.00
+        total_devido: 14.70
       };
     } catch (error) {
       console.error('Erro ao processar QR Code:', error);

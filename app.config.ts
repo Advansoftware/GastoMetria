@@ -8,6 +8,7 @@ const config = {
     orientation: "portrait",
     icon: "./assets/images/icon.png",
     userInterfaceStyle: "light",
+    scheme: "gastometria",
     splash: {
       image: "./assets/images/splash-icon.png",
       resizeMode: "contain",
@@ -25,7 +26,11 @@ const config = {
         foregroundImage: "./assets/images/adaptive-icon.png",
         backgroundColor: "#ffffff"
       },
-      package: "com.anonymous.gastometria"
+      package: "com.anonymous.gastometria",
+      permissions: [
+        "CAMERA",
+        "INTERNET"
+      ]
     },
     extra: {
       openaiApiKey: process.env.OPENAI_API_KEY,
