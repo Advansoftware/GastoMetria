@@ -1,4 +1,4 @@
-package com.brunoantunes100.gastometria
+package com.anonymous.gastometria
 import expo.modules.splashscreen.SplashScreenManager
 
 import android.os.Build

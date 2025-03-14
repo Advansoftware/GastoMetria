@@ -62,14 +62,21 @@ const useCamera = () => {
           const resultadoImagem = await processImage(photo.uri);
           setIsProcessingImage(false);
           
-          if (resultadoImagem?.fullText) {
-            setIsProcessingIA(true);
-            const analiseIA = await processarTextoComIA(resultadoImagem.fullText);
-            const resultado: ProcessedText = {
-              ...resultadoImagem,
-              analiseIA
-            };
-            handleProcessedText(resultado);
+          if (resultadoImagem) {
+            // Se já tem analiseIA, veio do QR Code
+            if (resultadoImagem.analiseIA) {
+              handleProcessedText(resultadoImagem);
+            } 
+            // Se não tem analiseIA, processa com IA
+            else if (resultadoImagem.fullText) {
+              setIsProcessingIA(true);
+              const analiseIA = await processarTextoComIA(resultadoImagem.fullText);
+              const resultado: ProcessedText = {
+                ...resultadoImagem,
+                analiseIA
+              };
+              handleProcessedText(resultado);
+            }
           }
         }
       } catch (e) {

@@ -28,7 +28,7 @@
         <key>CFBundleURLSchemes</key>
         <array>
           <string>gastometria</string>
-          <string>com.brunoantunes100.gastometria</string>
+          <string>com.anonymous.gastometria</string>
         </array>
       </dict>
       <dict>

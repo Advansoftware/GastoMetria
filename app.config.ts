@@ -4,10 +4,10 @@ const config = {
   name: "GastoMetria",
   version: "1.0.0",
   android: {
-    package: "com.brunoantunes100.gastometria",
+    package: "com.anonymous.gastometria",
   },
   ios: {
-    bundleIdentifier: "com.brunoantunes100.gastometria",
+    bundleIdentifier: "com.anonymous.gastometria",
   },
   extra: {
     openaiApiKey: process.env.OPENAI_API_KEY,

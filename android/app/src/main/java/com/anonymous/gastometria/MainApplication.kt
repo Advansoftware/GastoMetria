@@ -1,4 +1,4 @@
-package com.brunoantunes100.gastometria
+package com.anonymous.gastometria
 
 import android.app.Application
 import android.content.res.Configuration
