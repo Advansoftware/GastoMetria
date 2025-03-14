@@ -1,19 +1,30 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Text, View, TouchableOpacity, StyleSheet, Image, Alert } from 'react-native';
 import { CameraView, CameraType, useCameraPermissions } from 'expo-camera';
 import type { CameraCapturedPicture } from 'expo-camera';
 import * as MediaLibrary from 'expo-media-library';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { router } from 'expo-router';
+import { router, useFocusEffect } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
 import * as ImageManipulator from 'expo-image-manipulator';
 import TextRecognition from '@react-native-ml-kit/text-recognition';
+import { StatusBar } from 'expo-status-bar';
 
 export default function CameraScreen() {
+  const [statusBarStyle, setStatusBarStyle] = useState<'light' | 'dark'>('light');
   const [permission, requestPermission] = useCameraPermissions();
   const [image, setImage] = useState<string | null>(null);
   const [facing, setFacing] = useState<CameraType>('back');
   const cameraRef = useRef<CameraView>(null);
+
+  useFocusEffect(
+    React.useCallback(() => {
+      setStatusBarStyle('light');
+      return () => {
+        setStatusBarStyle('dark');
+      };
+    }, [])
+  );
 
   const toggleCameraFacing = () => {
     setFacing(current => (current === 'back' ? 'front' : 'back'));
@@ -137,6 +148,7 @@ export default function CameraScreen() {
 
   return (
     <View style={styles.container}>
+      <StatusBar style={statusBarStyle} />
       {!image ? (
         <CameraView 
           ref={cameraRef}
@@ -179,14 +191,16 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: 'black',
+    paddingTop: 0, // Remove padding top
   },
   camera: {
     flex: 1,
   },
-  controlsTop: {
+  controls: {
     flexDirection: 'row',
-    justifyContent: 'flex-end',
+    justifyContent: 'space-between',
     padding: 20,
+    marginTop: 40, // Adiciona margem para não conflitar com a status bar
   },
   buttonContainer: {
     flexDirection: 'row',
@@ -204,11 +218,6 @@ const styles = StyleSheet.create({
   buttonText: {
     fontSize: 18,
     color: 'black',
-  },
-  controls: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    padding: 20,
   },
   controlButton: {
     padding: 10,
