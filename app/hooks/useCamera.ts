@@ -1,9 +1,9 @@
 import { useRef, useState } from 'react';
 import { Alert } from 'react-native';
 import { CameraView, CameraType, useCameraPermissions } from 'expo-camera';
-import { useImageProcessing } from './useImageProcessing';
+import useImageProcessing from './useImageProcessing';
 
-export const useCamera = () => {
+const useCamera = () => {
   const [permission, requestPermission] = useCameraPermissions();
   const [facing, setFacing] = useState<CameraType>('back');
   const cameraRef = useRef<CameraView>(null);
@@ -35,6 +35,10 @@ export const useCamera = () => {
         const photo = await cameraRef.current.takePictureAsync({
           quality: 1,
           base64: false,
+          isImageMirror: false,
+          skipProcessing: false,
+          imageType: 'jpg',
+          exif: true
         });
         
         if (photo?.uri) {
@@ -57,3 +61,5 @@ export const useCamera = () => {
     tirarFoto
   };
 };
+
+export default useCamera;

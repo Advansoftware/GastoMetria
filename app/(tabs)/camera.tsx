@@ -4,8 +4,8 @@ import { CameraView } from 'expo-camera';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useFocusEffect } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { useCamera } from '../hooks/useCamera';
-import { styles } from '../components/CameraView/styles';
+import useCamera from '../hooks/useCamera';
+import styles from '../components/CameraView/styles';
 
 export default function CameraScreen() {
   const [statusBarStyle, setStatusBarStyle] = useState<'light' | 'dark'>('light');
@@ -49,6 +49,7 @@ export default function CameraScreen() {
         ref={cameraRef}
         style={styles.camera}
         facing={facing}
+        focusable
       >
         <View style={styles.controls}>
           <TouchableOpacity 
