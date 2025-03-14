@@ -1,4 +1,4 @@
-import { AIAnalysis } from "../types/camera";
+import type { AIAnalysis } from "../types/camera";
 import { openai, isDevEnv } from "../config/openai";
 
 const useAIProcessing = () => {

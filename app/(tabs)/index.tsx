@@ -98,7 +98,7 @@ const HomeScreen = () => {
 
   const navigateToCamera = () => {
     try {
-      router.push("/camera");
+      router.push("/(tabs)/scan/");
     } catch (error) {
       console.error("Erro na navegação:", error);
     }

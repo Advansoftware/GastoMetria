@@ -1,4 +1,4 @@
-interface Produto {
+export interface Produto {
   nome: string;
   quantidade: number;
   valor_pago: number;
@@ -16,3 +16,9 @@ export interface ProcessedText {
   blocks: string[];
   analiseIA?: AIAnalysis;
 }
+
+// Necessário para o Expo Router
+export default {
+  name: 'camera-types',
+  version: '1.0.0'
+};

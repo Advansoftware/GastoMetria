@@ -12,3 +12,10 @@ if (!openaiConfig.apiKey) {
 
 export const openai = new OpenAI(openaiConfig);
 export const isDevEnv = Constants.expoConfig?.extra?.nodeEnv === 'development';
+
+const OpenAIConfig = {
+  openai,
+  isDevEnv
+};
+
+export default OpenAIConfig;

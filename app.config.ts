@@ -1,20 +1,33 @@
 import "dotenv/config";
 
-const config = {
-  name: "GastoMetria",
-  version: "1.0.0",
-  android: {
-    package: "com.anonymous.gastometria",
-  },
-  ios: {
-    bundleIdentifier: "com.anonymous.gastometria",
-  },
-  extra: {
-    openaiApiKey: process.env.OPENAI_API_KEY,
-    nodeEnv: process.env.NODE_ENV,
-  },
-  plugins: ["expo-router", "expo-barcode-scanner"],
-  scheme: "gastometria",
-};
+const defineConfig = () => ({
+  expo: {
+    name: "GastoMetria",
+    slug: "gastometria",
+    version: "1.0.0",
+    extra: {
+      openaiApiKey: process.env.OPENAI_API_KEY,
+      nodeEnv: process.env.NODE_ENV,
+      eas: {
+        projectId: "8f96cec6-4172-4010-ad41-ddc7357d734f"
+      }
+    },
+    plugins: [
+      "expo-router",
+      [
+        "expo-barcode-scanner",
+        {
+          cameraPermission: "Permitir $(PRODUCT_NAME) acessar a câmera."
+        }
+      ],
+      [
+        "expo-camera",
+        {
+          cameraPermission: "Permitir $(PRODUCT_NAME) acessar a câmera para escanear notas fiscais."
+        }
+      ]
+    ]
+  }
+});
 
-export default config;
+export default defineConfig();

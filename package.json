@@ -11,21 +11,24 @@
     "test": "jest --watchAll",
     "lint": "expo lint",
     "dev": "export $(cat .env.development | xargs) && expo start --clear",
-    "prebuild": "expo prebuild --clean"
+    "prebuild": "expo prebuild --clean",
+    "devbuild": "eas build --profile development --platform android"
   },
   "jest": {
     "preset": "jest-expo"
   },
   "dependencies": {
     "@expo/vector-icons": "^14.0.2",
-    "@react-native-async-storage/async-storage": "^2.1.2",
+    "@react-native-async-storage/async-storage": "1.23.1",
     "@react-native-ml-kit/text-recognition": "^1.5.2",
-    "@react-native-picker/picker": "^2.11.0",
+    "@react-native-picker/picker": "2.9.0",
     "@react-navigation/bottom-tabs": "^7.2.0",
-    "@react-navigation/native": "^7.0.15",
-    "@react-navigation/native-stack": "^7.2.1",
+    "@react-navigation/native": "^7.0.14",
+    "@react-navigation/native-stack": "^7.2.0",
+    "cheerio": "^1.0.0-rc.12",
     "dotenv": "^16.4.7",
     "expo": "~52.0.38",
+    "expo-barcode-scanner": "~12.5.3",
     "expo-blur": "~14.0.3",
     "expo-camera": "~16.0.18",
     "expo-constants": "~17.0.8",
@@ -50,13 +53,11 @@
     "react-native-gesture-handler": "~2.20.2",
     "react-native-mlkit-ocr": "^0.3.0",
     "react-native-reanimated": "~3.16.1",
-    "react-native-safe-area-context": "^4.14.1",
+    "react-native-safe-area-context": "4.12.0",
     "react-native-screens": "~4.4.0",
     "react-native-vision-camera": "^4.6.4",
     "react-native-web": "~0.19.13",
-    "react-native-webview": "13.12.5",
-    "expo-barcode-scanner": "~12.5.3",
-    "cheerio": "^1.0.0-rc.12"
+    "react-native-webview": "13.12.5"
   },
   "devDependencies": {
     "@babel/core": "^7.25.2",
@@ -70,5 +71,21 @@
     "react-test-renderer": "18.3.1",
     "typescript": "^5.3.3"
   },
-  "private": true
+  "private": true,
+  "expo": {
+    "doctor": {
+      "reactNativeDirectoryCheck": {
+        "exclude": [
+          "@react-native-ml-kit/text-recognition",
+          "expo-barcode-scanner",
+          "cheerio",
+          "dotenv",
+          "expo-text-recognition",
+          "expo-vision",
+          "openai"
+        ],
+        "listUnknownPackages": false
+      }
+    }
+  }
 }

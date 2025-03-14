@@ -1,22 +1,29 @@
-import * as WebBrowser from 'expo-web-browser';
-import { AIAnalysis } from '../types/camera';
+import type { AIAnalysis } from '../types/camera';
 
 const useQRCodeProcessing = () => {
   const processQRCode = async (qrData: string): Promise<AIAnalysis | null> => {
     try {
+      // Verificar se é uma URL de nota fiscal
       if (!qrData.includes('nfe.fazenda') && !qrData.includes('nfce')) {
+        console.log("QR Code não é de nota fiscal");
         return null;
       }
 
-      const result = await WebBrowser.openAuthSessionAsync(qrData);
-      
-      // Implementar lógica de scraping aqui
-      // Por enquanto retornando estrutura mock
+      console.log("Processando QR Code de nota fiscal:", qrData);
+
+      // Por enquanto, retornamos dados mockados
+      // TODO: Implementar scraping real da nota
       return {
-        estabelecimento: "Nome do Estabelecimento",
-        data: new Date().toLocaleDateString(),
-        produtos: [],
-        total_devido: 0
+        estabelecimento: "Estabelecimento do QR Code",
+        data: new Date().toLocaleDateString('pt-BR'),
+        produtos: [
+          {
+            nome: "Produto do QR Code",
+            quantidade: 1,
+            valor_pago: 10.00
+          }
+        ],
+        total_devido: 10.00
       };
     } catch (error) {
       console.error('Erro ao processar QR Code:', error);

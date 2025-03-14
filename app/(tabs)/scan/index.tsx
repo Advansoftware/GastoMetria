@@ -4,11 +4,11 @@ import { CameraView } from 'expo-camera';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useFocusEffect } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import useCamera from '../hooks/useCamera';
-import styles from '../components/CameraView/styles';
-import LoadingOverlay from '../components/LoadingOverlay';
+import useCamera from '../../hooks/useCamera';
+import styles from '../../components/CameraView/styles';
+import LoadingOverlay from '../../components/LoadingOverlay';
 
-export default function CameraScreen() {
+export default function ScanScreen() {
   const [statusBarStyle, setStatusBarStyle] = useState<'light' | 'dark'>('light');
   const {
     permission,
@@ -71,7 +71,7 @@ export default function CameraScreen() {
       </CameraView>
 
       {isProcessingImage && (
-        <LoadingOverlay message="Processando imagem..." />
+        <LoadingOverlay message="Procurando QR Code ou processando imagem..." />
       )}
       
       {isProcessingIA && (
