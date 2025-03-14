@@ -5,7 +5,6 @@ import useImageProcessing from './useImageProcessing';
 import useAIProcessing from './useAIProcessing';
 import useQRCodeProcessing from './useQRCodeProcessing';
 import { ProcessedText } from '../types/camera';
-import { isNFCeUrl, extractNFCeData } from '../services/nfceService';
 
 function useCamera() {
   const [permission, requestPermission] = useCameraPermissions();

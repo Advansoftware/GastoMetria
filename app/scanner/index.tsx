@@ -4,9 +4,9 @@ import { CameraView, BarcodeSettings } from 'expo-camera';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useFocusEffect, router } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import useCamera from '../../hooks/useCamera';
-import styles from '../../components/CameraView/styles';
-import LoadingOverlay from '../../components/LoadingOverlay';
+import useCamera from '@/app/hooks/useCamera';
+import styles from '@/app/components/CameraView/styles';
+import LoadingOverlay from '@/app/components/LoadingOverlay';
 
 function ScanScreen() {
   const [statusBarStyle, setStatusBarStyle] = useState<'light' | 'dark'>('light');

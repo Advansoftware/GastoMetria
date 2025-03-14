@@ -4,7 +4,6 @@ import {
   Text,
   FlatList,
   StyleSheet,
-  TouchableOpacity,
 } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { router } from "expo-router";
@@ -96,14 +95,6 @@ const HomeScreen = () => {
     (_, i) => new Date().getFullYear() - 2 + i
   );
 
-  const navigateToCamera = () => {
-    try {
-      router.push("/(tabs)/scan/");
-    } catch (error) {
-      console.error("Erro na navegação:", error);
-    }
-  };
-
   return (
     <View style={styles.container}>
       <View style={styles.header}>
@@ -132,10 +123,6 @@ const HomeScreen = () => {
             </Select>
           </View>
         </View>
-        
-        <Button color="primary" variant="contained" onPress={navigateToCamera}>
-          Escanear Nota
-        </Button>
       </View>
 
       <FlatList
@@ -188,17 +175,6 @@ const styles = StyleSheet.create({
   },
   selectWrapper: {
     flex: 1,
-  },
-  scanButton: {
-    backgroundColor: "#007AFF",
-    padding: 12,
-    borderRadius: 8,
-    alignItems: "center",
-  },
-  scanButtonText: {
-    color: "white",
-    fontSize: 16,
-    fontWeight: "bold",
   },
   gastoCard: {
     backgroundColor: "white",

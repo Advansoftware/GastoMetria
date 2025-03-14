@@ -12,7 +12,7 @@ const config = {
     splash: {
       image: "./assets/images/splash-icon.png",
       resizeMode: "contain",
-      backgroundColor: "#ffffff"
+      backgroundColor: "#fcd877"
     },
     assetBundlePatterns: [
       "**/*"
@@ -24,13 +24,14 @@ const config = {
     android: {
       adaptiveIcon: {
         foregroundImage: "./assets/images/adaptive-icon.png",
-        backgroundColor: "#ffffff"
+        backgroundColor: "#fcd877"
       },
       package: "com.anonymous.gastometria",
       permissions: [
         "CAMERA",
         "INTERNET"
-      ]
+      ],
+      jsEngine: "hermes"
     },
     extra: {
       openaiApiKey: process.env.OPENAI_API_KEY,
