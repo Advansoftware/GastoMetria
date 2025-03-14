@@ -1,10 +1,32 @@
 import "dotenv/config";
 
-const defineConfig = () => ({
+const config = {
   expo: {
     name: "GastoMetria",
     slug: "gastometria",
     version: "1.0.0",
+    orientation: "portrait",
+    icon: "./assets/images/icon.png",
+    userInterfaceStyle: "light",
+    splash: {
+      image: "./assets/images/splash-icon.png",
+      resizeMode: "contain",
+      backgroundColor: "#ffffff"
+    },
+    assetBundlePatterns: [
+      "**/*"
+    ],
+    ios: {
+      supportsTablet: true,
+      bundleIdentifier: "com.anonymous.gastometria"
+    },
+    android: {
+      adaptiveIcon: {
+        foregroundImage: "./assets/images/adaptive-icon.png",
+        backgroundColor: "#ffffff"
+      },
+      package: "com.anonymous.gastometria"
+    },
     extra: {
       openaiApiKey: process.env.OPENAI_API_KEY,
       nodeEnv: process.env.NODE_ENV,
@@ -28,6 +50,6 @@ const defineConfig = () => ({
       ]
     ]
   }
-});
+};
 
-export default defineConfig();
+export default config;
