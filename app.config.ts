@@ -37,15 +37,9 @@ const config = {
     plugins: [
       "expo-router",
       [
-        "expo-barcode-scanner",
-        {
-          cameraPermission: "Permitir $(PRODUCT_NAME) acessar a câmera."
-        }
-      ],
-      [
         "expo-camera",
         {
-          cameraPermission: "Permitir $(PRODUCT_NAME) acessar a câmera para escanear notas fiscais."
+          cameraPermission: "Permitir $(PRODUCT_NAME) acessar a câmera para escanear notas fiscais e QR codes."
         }
       ]
     ]

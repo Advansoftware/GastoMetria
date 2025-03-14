@@ -1,11 +1,11 @@
 import { useRef, useState } from 'react';
 import { Alert } from 'react-native';
-import { CameraView, CameraType, useCameraPermissions } from 'expo-camera';
+import { CameraView, CameraType, useCameraPermissions, BarcodeScanningResult, BarcodeSettings } from 'expo-camera';
 import useImageProcessing from './useImageProcessing';
 import useAIProcessing from './useAIProcessing';
 import { ProcessedText } from '../types/camera';
 
-const useCamera = () => {
+function useCamera() {
   const [permission, requestPermission] = useCameraPermissions();
   const [facing, setFacing] = useState<CameraType>('back');
   const cameraRef = useRef<CameraView>(null);
@@ -13,6 +13,7 @@ const useCamera = () => {
   const { processarTextoComIA } = useAIProcessing();
   const [isProcessingImage, setIsProcessingImage] = useState(false);
   const [isProcessingIA, setIsProcessingIA] = useState(false);
+  const [isScanning, setIsScanning] = useState(true);
 
   const toggleCameraFacing = () => {
     setFacing(current => (current === 'back' ? 'front' : 'back'));
@@ -42,6 +43,25 @@ const useCamera = () => {
         "Não foi possível analisar o texto",
         [{ text: "Tentar Novamente" }]
       );
+    }
+  };
+
+  const handleBarcodeScanned = async ({ data }: BarcodeScanningResult) => {
+    setIsScanning(false);
+    try {
+      setIsProcessingIA(true);
+      const analiseIA = await processarTextoComIA(data);
+      handleProcessedText({ 
+        fullText: data, 
+        analiseIA,
+        blocks: [] // Adicionando a propriedade blocks obrigatória
+      });
+    } catch (e) {
+      console.error("Erro ao processar QR code:", e);
+      Alert.alert("Erro", "Não foi possível processar o QR code");
+    } finally {
+      setIsProcessingIA(false);
+      setIsScanning(true);
     }
   };
 
@@ -97,8 +117,14 @@ const useCamera = () => {
     toggleCameraFacing,
     tirarFoto,
     isProcessingImage,
-    isProcessingIA
+    isProcessingIA,
+    isScanning,
+    handleBarcodeScanned,
+    barcodeScannerSettings: {
+      barcodeTypes: ["qr"] satisfies BarcodeSettings["barcodeTypes"]
+    }
   };
-};
+}
 
+// Garantir que o hook é exportado como padrão
 export default useCamera;
