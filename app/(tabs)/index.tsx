@@ -1,74 +1,202 @@
-import { Image, StyleSheet, Platform } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { View, Text, FlatList, StyleSheet, TouchableOpacity } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Picker } from '@react-native-picker/picker';
+import { router } from 'expo-router';
 
-import { HelloWave } from '@/components/HelloWave';
-import ParallaxScrollView from '@/components/ParallaxScrollView';
-import { ThemedText } from '@/components/ThemedText';
-import { ThemedView } from '@/components/ThemedView';
+const HomeScreen = () => {
+  const [gastos, setGastos] = useState<any[]>([]);
+  const [resumo, setResumo] = useState<any>({});
+  const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth());
+  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
 
-export default function HomeScreen() {
-  return (
-    <ParallaxScrollView
-      headerBackgroundColor={{ light: '#A1CEDC', dark: '#1D3D47' }}
-      headerImage={
-        <Image
-          source={require('@/assets/images/partial-react-logo.png')}
-          style={styles.reactLogo}
-        />
-      }>
-      <ThemedView style={styles.titleContainer}>
-        <ThemedText type="title">Welcome!</ThemedText>
-        <HelloWave />
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 1: Try it</ThemedText>
-        <ThemedText>
-          Edit <ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText> to see changes.
-          Press{' '}
-          <ThemedText type="defaultSemiBold">
-            {Platform.select({
-              ios: 'cmd + d',
-              android: 'cmd + m',
-              web: 'F12'
-            })}
-          </ThemedText>{' '}
-          to open developer tools.
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 2: Explore</ThemedText>
-        <ThemedText>
-          Tap the Explore tab to learn more about what's included in this starter app.
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 3: Get a fresh start</ThemedText>
-        <ThemedText>
-          When you're ready, run{' '}
-          <ThemedText type="defaultSemiBold">npm run reset-project</ThemedText> to get a fresh{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> directory. This will move the current{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> to{' '}
-          <ThemedText type="defaultSemiBold">app-example</ThemedText>.
-        </ThemedText>
-      </ThemedView>
-    </ParallaxScrollView>
+  const loadGastos = async () => {
+    const storedData = await AsyncStorage.getItem('gastos');
+    if (storedData) {
+      const gastosParse = JSON.parse(storedData);
+      const gastosFiltrados = gastosParse.filter((gasto: any) => {
+        const gastoDate = new Date(gasto.data);
+        return gastoDate.getMonth() === selectedMonth && 
+               gastoDate.getFullYear() === selectedYear;
+      });
+      setGastos(gastosFiltrados);
+      organizarResumo(gastosFiltrados);
+    }
+  };
+
+  const organizarResumo = (gastos: any[]) => {
+    const resumoTemp: any = {};
+
+    gastos.forEach((gasto) => {
+      if (!resumoTemp[gasto.estabelecimento]) {
+        resumoTemp[gasto.estabelecimento] = { total: 0, categorias: {} };
+      }
+
+      gasto.itens.forEach((item: any) => {
+        resumoTemp[gasto.estabelecimento].total += item.preco;
+
+        if (!resumoTemp[gasto.estabelecimento].categorias[item.categoria]) {
+          resumoTemp[gasto.estabelecimento].categorias[item.categoria] = { total: 0, produtos: {} };
+        }
+
+        resumoTemp[gasto.estabelecimento].categorias[item.categoria].total += item.preco;
+
+        if (!resumoTemp[gasto.estabelecimento].categorias[item.categoria].produtos[item.produto]) {
+          resumoTemp[gasto.estabelecimento].categorias[item.categoria].produtos[item.produto] = 0;
+        }
+
+        resumoTemp[gasto.estabelecimento].categorias[item.categoria].produtos[item.produto] += item.preco;
+      });
+    });
+
+    setResumo(resumoTemp);
+  };
+
+  useEffect(() => {
+    loadGastos();
+  }, [selectedMonth, selectedYear]);
+
+  const meses = [
+    'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
+    'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
+  ];
+
+  const anos = Array.from(
+    { length: 5 },
+    (_, i) => new Date().getFullYear() - 2 + i
   );
-}
+
+  const navigateToCamera = () => {
+    try {
+      router.push('/camera');
+    } catch (error) {
+      console.error('Erro na navegação:', error);
+    }
+  };
+
+  return (
+    <View style={styles.container}>
+      <View style={styles.header}>
+        <View style={styles.filterContainer}>
+          <Picker
+            selectedValue={selectedMonth}
+            style={styles.picker}
+            onValueChange={(value) => setSelectedMonth(value)}
+          >
+            {meses.map((mes, index) => (
+              <Picker.Item key={index} label={mes} value={index} />
+            ))}
+          </Picker>
+          
+          <Picker
+            selectedValue={selectedYear}
+            style={styles.picker}
+            onValueChange={(value) => setSelectedYear(value)}
+          >
+            {anos.map((ano) => (
+              <Picker.Item key={ano} label={String(ano)} value={ano} />
+            ))}
+          </Picker>
+        </View>
+        
+        <TouchableOpacity 
+          style={styles.scanButton}
+          onPress={navigateToCamera}
+        >
+          <Text style={styles.scanButtonText}>Escanear Nota</Text>
+        </TouchableOpacity>
+      </View>
+
+      <FlatList
+        data={Object.keys(resumo)}
+        keyExtractor={(item) => item}
+        renderItem={({ item }) => (
+          <View style={styles.gastoCard}>
+            <Text style={styles.estabelecimento}>{item}</Text>
+            <Text style={styles.total}>Total: R$ {resumo[item].total.toFixed(2)}</Text>
+            {Object.keys(resumo[item].categorias).map((categoria) => (
+              <View key={categoria} style={styles.categoriaContainer}>
+                <Text style={styles.categoria}>
+                  {categoria}: R$ {resumo[item].categorias[categoria].total.toFixed(2)}
+                </Text>
+                {Object.keys(resumo[item].categorias[categoria].produtos).map((produto) => (
+                  <Text key={produto} style={styles.produto}>
+                    {produto}: R$ {resumo[item].categorias[categoria].produtos[produto].toFixed(2)}
+                  </Text>
+                ))}
+              </View>
+            ))}
+          </View>
+        )}
+      />
+    </View>
+  );
+};
 
 const styles = StyleSheet.create({
-  titleContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
+  container: {
+    flex: 1,
+    padding: 16,
+    backgroundColor: '#f5f5f5',
   },
-  stepContainer: {
-    gap: 8,
+  header: {
+    marginBottom: 16,
+  },
+  filterContainer: {
+    flexDirection: 'row',
+    marginBottom: 10,
+  },
+  picker: {
+    flex: 1,
+    height: 40,
+    marginRight: 8,
+  },
+  scanButton: {
+    backgroundColor: '#007AFF',
+    padding: 12,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  scanButtonText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  gastoCard: {
+    backgroundColor: 'white',
+    padding: 16,
+    borderRadius: 8,
+    marginBottom: 12,
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+  },
+  estabelecimento: {
+    fontSize: 18,
+    fontWeight: 'bold',
     marginBottom: 8,
   },
-  reactLogo: {
-    height: 178,
-    width: 290,
-    bottom: 0,
-    left: 0,
-    position: 'absolute',
+  total: {
+    fontSize: 16,
+    color: '#007AFF',
+    marginBottom: 8,
+  },
+  categoriaContainer: {
+    marginLeft: 16,
+    marginTop: 4,
+  },
+  categoria: {
+    fontSize: 15,
+    fontWeight: '500',
+    color: '#333',
+  },
+  produto: {
+    fontSize: 14,
+    color: '#666',
+    marginLeft: 16,
   },
 });
+
+export default HomeScreen;
