@@ -1,8 +1,15 @@
-import React, { useEffect, useState } from 'react';
-import { View, Text, FlatList, StyleSheet, TouchableOpacity } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { Picker } from '@react-native-picker/picker';
-import { router } from 'expo-router';
+import React, { useEffect, useState } from "react";
+import {
+  View,
+  Text,
+  FlatList,
+  StyleSheet,
+  TouchableOpacity,
+} from "react-native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { router } from "expo-router";
+import { Button } from "@/components/ui/button";
+import { Select, MenuItem } from "@/components/ui/select";
 
 const HomeScreen = () => {
   const [gastos, setGastos] = useState<any[]>([]);
@@ -11,13 +18,15 @@ const HomeScreen = () => {
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
 
   const loadGastos = async () => {
-    const storedData = await AsyncStorage.getItem('gastos');
+    const storedData = await AsyncStorage.getItem("gastos");
     if (storedData) {
       const gastosParse = JSON.parse(storedData);
       const gastosFiltrados = gastosParse.filter((gasto: any) => {
         const gastoDate = new Date(gasto.data);
-        return gastoDate.getMonth() === selectedMonth && 
-               gastoDate.getFullYear() === selectedYear;
+        return (
+          gastoDate.getMonth() === selectedMonth &&
+          gastoDate.getFullYear() === selectedYear
+        );
       });
       setGastos(gastosFiltrados);
       organizarResumo(gastosFiltrados);
@@ -36,16 +45,27 @@ const HomeScreen = () => {
         resumoTemp[gasto.estabelecimento].total += item.preco;
 
         if (!resumoTemp[gasto.estabelecimento].categorias[item.categoria]) {
-          resumoTemp[gasto.estabelecimento].categorias[item.categoria] = { total: 0, produtos: {} };
+          resumoTemp[gasto.estabelecimento].categorias[item.categoria] = {
+            total: 0,
+            produtos: {},
+          };
         }
 
-        resumoTemp[gasto.estabelecimento].categorias[item.categoria].total += item.preco;
+        resumoTemp[gasto.estabelecimento].categorias[item.categoria].total +=
+          item.preco;
 
-        if (!resumoTemp[gasto.estabelecimento].categorias[item.categoria].produtos[item.produto]) {
-          resumoTemp[gasto.estabelecimento].categorias[item.categoria].produtos[item.produto] = 0;
+        if (
+          !resumoTemp[gasto.estabelecimento].categorias[item.categoria]
+            .produtos[item.produto]
+        ) {
+          resumoTemp[gasto.estabelecimento].categorias[item.categoria].produtos[
+            item.produto
+          ] = 0;
         }
 
-        resumoTemp[gasto.estabelecimento].categorias[item.categoria].produtos[item.produto] += item.preco;
+        resumoTemp[gasto.estabelecimento].categorias[item.categoria].produtos[
+          item.produto
+        ] += item.preco;
       });
     });
 
@@ -57,8 +77,18 @@ const HomeScreen = () => {
   }, [selectedMonth, selectedYear]);
 
   const meses = [
-    'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
-    'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
+    "Janeiro",
+    "Fevereiro",
+    "Março",
+    "Abril",
+    "Maio",
+    "Junho",
+    "Julho",
+    "Agosto",
+    "Setembro",
+    "Outubro",
+    "Novembro",
+    "Dezembro",
   ];
 
   const anos = Array.from(
@@ -68,9 +98,9 @@ const HomeScreen = () => {
 
   const navigateToCamera = () => {
     try {
-      router.push('/camera');
+      router.push("/camera");
     } catch (error) {
-      console.error('Erro na navegação:', error);
+      console.error("Erro na navegação:", error);
     }
   };
 
@@ -78,33 +108,34 @@ const HomeScreen = () => {
     <View style={styles.container}>
       <View style={styles.header}>
         <View style={styles.filterContainer}>
-          <Picker
-            selectedValue={selectedMonth}
-            style={styles.picker}
-            onValueChange={(value) => setSelectedMonth(value)}
-          >
-            {meses.map((mes, index) => (
-              <Picker.Item key={index} label={mes} value={index} />
-            ))}
-          </Picker>
+          <View style={styles.selectWrapper}>
+            <Select
+              value={selectedMonth}
+              onChange={setSelectedMonth}
+              label="Mês"
+            >
+              {meses.map((mes, index) => (
+                <MenuItem key={index} label={mes} value={index} />
+              ))}
+            </Select>
+          </View>
           
-          <Picker
-            selectedValue={selectedYear}
-            style={styles.picker}
-            onValueChange={(value) => setSelectedYear(value)}
-          >
-            {anos.map((ano) => (
-              <Picker.Item key={ano} label={String(ano)} value={ano} />
-            ))}
-          </Picker>
+          <View style={styles.selectWrapper}>
+            <Select
+              value={selectedYear}
+              onChange={setSelectedYear}
+              label="Ano"
+            >
+              {anos.map((ano) => (
+                <MenuItem key={ano} label={String(ano)} value={ano} />
+              ))}
+            </Select>
+          </View>
         </View>
         
-        <TouchableOpacity 
-          style={styles.scanButton}
-          onPress={navigateToCamera}
-        >
-          <Text style={styles.scanButtonText}>Escanear Nota</Text>
-        </TouchableOpacity>
+        <Button color="primary" variant="contained" onPress={navigateToCamera}>
+          Escanear Nota
+        </Button>
       </View>
 
       <FlatList
@@ -113,17 +144,25 @@ const HomeScreen = () => {
         renderItem={({ item }) => (
           <View style={styles.gastoCard}>
             <Text style={styles.estabelecimento}>{item}</Text>
-            <Text style={styles.total}>Total: R$ {resumo[item].total.toFixed(2)}</Text>
+            <Text style={styles.total}>
+              Total: R$ {resumo[item].total.toFixed(2)}
+            </Text>
             {Object.keys(resumo[item].categorias).map((categoria) => (
               <View key={categoria} style={styles.categoriaContainer}>
                 <Text style={styles.categoria}>
-                  {categoria}: R$ {resumo[item].categorias[categoria].total.toFixed(2)}
+                  {categoria}: R${" "}
+                  {resumo[item].categorias[categoria].total.toFixed(2)}
                 </Text>
-                {Object.keys(resumo[item].categorias[categoria].produtos).map((produto) => (
-                  <Text key={produto} style={styles.produto}>
-                    {produto}: R$ {resumo[item].categorias[categoria].produtos[produto].toFixed(2)}
-                  </Text>
-                ))}
+                {Object.keys(resumo[item].categorias[categoria].produtos).map(
+                  (produto) => (
+                    <Text key={produto} style={styles.produto}>
+                      {produto}: R${" "}
+                      {resumo[item].categorias[categoria].produtos[
+                        produto
+                      ].toFixed(2)}
+                    </Text>
+                  )
+                )}
               </View>
             ))}
           </View>
@@ -137,50 +176,49 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 16,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: "#f5f5f5",
   },
   header: {
     marginBottom: 16,
   },
   filterContainer: {
-    flexDirection: 'row',
+    flexDirection: "row",
     marginBottom: 10,
+    gap: 8,
   },
-  picker: {
+  selectWrapper: {
     flex: 1,
-    height: 40,
-    marginRight: 8,
   },
   scanButton: {
-    backgroundColor: '#007AFF',
+    backgroundColor: "#007AFF",
     padding: 12,
     borderRadius: 8,
-    alignItems: 'center',
+    alignItems: "center",
   },
   scanButtonText: {
-    color: 'white',
+    color: "white",
     fontSize: 16,
-    fontWeight: 'bold',
+    fontWeight: "bold",
   },
   gastoCard: {
-    backgroundColor: 'white',
+    backgroundColor: "white",
     padding: 16,
     borderRadius: 8,
     marginBottom: 12,
     elevation: 2,
-    shadowColor: '#000',
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
   },
   estabelecimento: {
     fontSize: 18,
-    fontWeight: 'bold',
+    fontWeight: "bold",
     marginBottom: 8,
   },
   total: {
     fontSize: 16,
-    color: '#007AFF',
+    color: "#007AFF",
     marginBottom: 8,
   },
   categoriaContainer: {
@@ -189,12 +227,12 @@ const styles = StyleSheet.create({
   },
   categoria: {
     fontSize: 15,
-    fontWeight: '500',
-    color: '#333',
+    fontWeight: "500",
+    color: "#333",
   },
   produto: {
     fontSize: 14,
-    color: '#666',
+    color: "#666",
     marginLeft: 16,
   },
 });
