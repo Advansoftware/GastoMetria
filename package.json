@@ -10,7 +10,8 @@
     "web": "expo start --web",
     "test": "jest --watchAll",
     "lint": "expo lint",
-    "dev": "NODE_ENV=development expo start"
+    "dev": "export $(cat .env.development | xargs) && expo start --clear",
+    "prebuild": "expo prebuild --clean"
   },
   "jest": {
     "preset": "jest-expo"
@@ -53,7 +54,9 @@
     "react-native-screens": "~4.4.0",
     "react-native-vision-camera": "^4.6.4",
     "react-native-web": "~0.19.13",
-    "react-native-webview": "13.12.5"
+    "react-native-webview": "13.12.5",
+    "expo-barcode-scanner": "~12.5.3",
+    "cheerio": "^1.0.0-rc.12"
   },
   "devDependencies": {
     "@babel/core": "^7.25.2",

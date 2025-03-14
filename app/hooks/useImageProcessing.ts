@@ -5,7 +5,6 @@ import { ProcessedText } from '../types/camera';
 const useImageProcessing = () => {
   const processImage = async (uri: string): Promise<ProcessedText | null> => {
     try {
-      // Processamento de imagem
       const processedImage = await ImageManipulator.manipulateAsync(
         uri,
         [{ resize: { width: 1200 } }],

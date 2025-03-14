@@ -6,7 +6,7 @@ import { useFocusEffect } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import useCamera from '../hooks/useCamera';
 import styles from '../components/CameraView/styles';
-import { LoadingOverlay } from '../components/LoadingOverlay';
+import LoadingOverlay from '../components/LoadingOverlay';
 
 export default function CameraScreen() {
   const [statusBarStyle, setStatusBarStyle] = useState<'light' | 'dark'>('light');

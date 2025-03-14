@@ -5,7 +5,7 @@ interface LoadingOverlayProps {
   message: string;
 }
 
-export const LoadingOverlay = ({ message }: LoadingOverlayProps) => (
+const LoadingOverlay = ({ message }: LoadingOverlayProps) => (
   <View style={styles.overlay}>
     <View style={styles.container}>
       <ActivityIndicator size="large" color="#ffffff" />
@@ -38,3 +38,5 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
 });
+
+export default LoadingOverlay;
