@@ -6,6 +6,7 @@ import { useFocusEffect } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import useCamera from '../hooks/useCamera';
 import styles from '../components/CameraView/styles';
+import { LoadingOverlay } from '../components/LoadingOverlay';
 
 export default function CameraScreen() {
   const [statusBarStyle, setStatusBarStyle] = useState<'light' | 'dark'>('light');
@@ -16,6 +17,8 @@ export default function CameraScreen() {
     cameraRef,
     toggleCameraFacing,
     tirarFoto,
+    isProcessingImage,
+    isProcessingIA,
   } = useCamera();
 
   useFocusEffect(
@@ -66,6 +69,14 @@ export default function CameraScreen() {
           </TouchableOpacity>
         </View>
       </CameraView>
+
+      {isProcessingImage && (
+        <LoadingOverlay message="Processando imagem..." />
+      )}
+      
+      {isProcessingIA && (
+        <LoadingOverlay message="Analisando dados com IA..." />
+      )}
     </View>
   );
 }
