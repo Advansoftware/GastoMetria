@@ -1,10 +1,12 @@
 import { useRef, useState } from 'react';
 import { Alert } from 'react-native';
+import { router } from 'expo-router';
 import { CameraView, CameraType, useCameraPermissions, BarcodeScanningResult, BarcodeSettings } from 'expo-camera';
 import useImageProcessing from './useImageProcessing';
 import useAIProcessing from './useAIProcessing';
 import useQRCodeProcessing from './useQRCodeProcessing';
 import { ProcessedText } from '../types/camera';
+import { useStorage } from './useStorage';
 
 function useCamera() {
   const [permission, requestPermission] = useCameraPermissions();
@@ -13,6 +15,7 @@ function useCamera() {
   const { processImage } = useImageProcessing();
   const { processarTextoComIA } = useAIProcessing();
   const { processQRCode } = useQRCodeProcessing();
+  const { saveItem } = useStorage();
   const [isProcessingImage, setIsProcessingImage] = useState(false);
   const [isProcessingIA, setIsProcessingIA] = useState(false);
   const [isScanning, setIsScanning] = useState(true);
@@ -21,33 +24,34 @@ function useCamera() {
     setFacing(current => (current === 'back' ? 'front' : 'back'));
   };
 
-  const handleProcessedText = (resultado: ProcessedText | null) => {
+  const handleProcessedText = async (resultado: ProcessedText | null) => {
     if (resultado?.analiseIA) {
       const { estabelecimento, data, produtos, total_devido } = resultado.analiseIA;
-      const detalhes = [
-        `Estabelecimento: ${estabelecimento}`,
-        `Data: ${data}`,
-        '',
-        'Produtos:',
-        ...produtos.map(p => {
-          const valorUnitario = p.valor_unitario || p.valor_pago / p.quantidade;
-          return `${p.nome}: ${p.quantidade}x R$ ${valorUnitario.toFixed(2)} = R$ ${p.valor_pago.toFixed(2)}`;
-        }),
-        '',
-        `Total: R$ ${total_devido.toFixed(2)}`
-      ];
+      
+      try {
+        console.log('Total de produtos recebidos:', produtos.length);
+        
+        // Garantir que todos os produtos sejam salvos
+        for (const produto of produtos) {
+          if (!produto.nome) continue; // Pular produtos sem nome
+          
+          await saveItem({
+            produto: produto.nome,
+            categoria: produto.categoria || 'Não categorizado',
+            quantidade: produto.quantidade || 1,
+            valor_unitario: produto.valor_unitario || produto.valor_pago / (produto.quantidade || 1),
+            valor_total: produto.valor_pago,
+            estabelecimento,
+            data
+          });
+        }
 
-      Alert.alert(
-        "Nota Fiscal Processada",
-        detalhes.join('\n'),
-        [{ text: "OK" }]
-      );
-    } else {
-      Alert.alert(
-        "Aviso",
-        "Não foi possível analisar o texto",
-        [{ text: "Tentar Novamente" }]
-      );
+        console.log('Todos os produtos foram salvos');
+        router.replace("/(tabs)/");
+      } catch (error) {
+        console.error('Erro ao processar itens:', error);
+        Alert.alert('Erro', 'Não foi possível salvar todos os itens');
+      }
     }
   };
 

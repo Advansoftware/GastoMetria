@@ -1,20 +1,24 @@
 import React, { useEffect, useState } from "react";
+import { useFocusEffect } from "expo-router";
 import {
   View,
   Text,
   FlatList,
   StyleSheet,
+  TouchableOpacity,
 } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { router } from "expo-router";
 import { Button } from "@/components/ui/button";
 import { Select, MenuItem } from "@/components/ui/select";
+import { useStorage } from '../hooks/useStorage';
 
 const HomeScreen = () => {
   const [gastos, setGastos] = useState<any[]>([]);
   const [resumo, setResumo] = useState<any>({});
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth());
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
+  const { groupedItems, loadItems } = useStorage();
 
   const loadGastos = async () => {
     const storedData = await AsyncStorage.getItem("gastos");
@@ -75,6 +79,12 @@ const HomeScreen = () => {
     loadGastos();
   }, [selectedMonth, selectedYear]);
 
+  useFocusEffect(
+    React.useCallback(() => {
+      loadItems();
+    }, [])
+  );
+
   const meses = [
     "Janeiro",
     "Fevereiro",
@@ -126,33 +136,23 @@ const HomeScreen = () => {
       </View>
 
       <FlatList
-        data={Object.keys(resumo)}
-        keyExtractor={(item) => item}
-        renderItem={({ item }) => (
-          <View style={styles.gastoCard}>
-            <Text style={styles.estabelecimento}>{item}</Text>
-            <Text style={styles.total}>
-              Total: R$ {resumo[item].total.toFixed(2)}
+        data={Object.entries(groupedItems)}
+        keyExtractor={([estabelecimento]) => estabelecimento}
+        renderItem={({ item: [estabelecimento, dados] }) => (
+          <TouchableOpacity 
+            style={styles.estabelecimentoCard}
+            onPress={() => {
+              router.push(`/estabelecimento/${estabelecimento}`);
+            }}
+          >
+            <Text style={styles.estabelecimentoNome}>{estabelecimento}</Text>
+            <Text style={styles.estabelecimentoData}>
+              {new Date(dados.data).toLocaleDateString()}
             </Text>
-            {Object.keys(resumo[item].categorias).map((categoria) => (
-              <View key={categoria} style={styles.categoriaContainer}>
-                <Text style={styles.categoria}>
-                  {categoria}: R${" "}
-                  {resumo[item].categorias[categoria].total.toFixed(2)}
-                </Text>
-                {Object.keys(resumo[item].categorias[categoria].produtos).map(
-                  (produto) => (
-                    <Text key={produto} style={styles.produto}>
-                      {produto}: R${" "}
-                      {resumo[item].categorias[categoria].produtos[
-                        produto
-                      ].toFixed(2)}
-                    </Text>
-                  )
-                )}
-              </View>
-            ))}
-          </View>
+            <Text style={styles.estabelecimentoTotal}>
+              Total: R$ {dados.valor_total.toFixed(2)}
+            </Text>
+          </TouchableOpacity>
         )}
       />
     </View>
@@ -210,6 +210,46 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: "#666",
     marginLeft: 16,
+  },
+  quantidade: {
+    fontSize: 14,
+    color: "#666",
+    marginLeft: 16,
+  },
+  detalhes: {
+    fontSize: 14,
+    color: "#666",
+    marginLeft: 16,
+  },
+  ocorrencia: {
+    fontSize: 14,
+    color: "#666",
+    marginLeft: 16,
+  },
+  estabelecimentoCard: {
+    backgroundColor: "white",
+    padding: 16,
+    borderRadius: 8,
+    marginBottom: 12,
+    elevation: 2,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+  },
+  estabelecimentoNome: {
+    fontSize: 18,
+    fontWeight: "bold",
+    marginBottom: 4,
+  },
+  estabelecimentoData: {
+    fontSize: 14,
+    color: "#666",
+    marginBottom: 4,
+  },
+  estabelecimentoTotal: {
+    fontSize: 16,
+    color: "#007AFF",
   },
 });
 
