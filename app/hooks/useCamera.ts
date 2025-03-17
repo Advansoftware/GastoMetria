@@ -25,60 +25,75 @@ function useCamera() {
   };
 
   const handleProcessedText = async (resultado: ProcessedText | null) => {
-    if (resultado?.analiseIA) {
-      setIsScanning(false); // Para o scanner antes de qualquer processamento
+    if (!resultado) {
+      console.log('Nenhum resultado disponível');
+      setIsScanning(true);
+      return;
+    }
+
+    setIsScanning(false);
+    
+    const { analiseIA } = resultado;
+    if (analiseIA.notaProcessada) {
+      setTimeout(() => {
+        Alert.alert(
+          "Nota Já Processada",
+          `Esta nota fiscal já foi processada anteriormente para o estabelecimento ${analiseIA.estabelecimento}.`
+        );
+      }, 500);
+      return;
+    }
+
+    // Verifica se é uma nota já processada
+    if (resultado.analiseIA.notaProcessada) {
+      setTimeout(() => {
+        Alert.alert(
+          "Nota Já Processada",
+          `Esta nota fiscal já foi processada anteriormente para o estabelecimento ${resultado.analiseIA.estabelecimento}.`
+        );
+      }, 500); // Pequeno delay para garantir que a navegação aconteceu
+      return;
+    }
+
+    const { estabelecimento, data, produtos, total_devido, chaveNota } = resultado.analiseIA;
+    
+    try {
+      // Verificar se a nota já foi processada
+      const notaExistente = await verificarNotaExistente(chaveNota);
       
-      // Verifica se é uma nota já processada
-      if (resultado.analiseIA.notaProcessada) {
-        setTimeout(() => {
-          Alert.alert(
-            "Nota Já Processada",
-            `Esta nota fiscal já foi processada anteriormente para o estabelecimento ${resultado.analiseIA.estabelecimento}.`
-          );
-        }, 500); // Pequeno delay para garantir que a navegação aconteceu
+      if (notaExistente) {
+        Alert.alert(
+          "Nota Fiscal Duplicada",
+          `Esta nota fiscal já foi processada em ${new Date(notaExistente.processadaEm).toLocaleDateString()} para o estabelecimento ${notaExistente.estabelecimento}.`,
+          [{ text: "OK", onPress: () => router.back() }]
+        );
         return;
       }
 
-      const { estabelecimento, data, produtos, total_devido, chaveNota } = resultado.analiseIA;
-      
-      try {
-        // Verificar se a nota já foi processada
-        const notaExistente = await verificarNotaExistente(chaveNota);
+      // Salvar os produtos
+      for (const produto of produtos) {
+        if (!produto.nome) continue;
         
-        if (notaExistente) {
-          Alert.alert(
-            "Nota Fiscal Duplicada",
-            `Esta nota fiscal já foi processada em ${new Date(notaExistente.processadaEm).toLocaleDateString()} para o estabelecimento ${notaExistente.estabelecimento}.`,
-            [{ text: "OK", onPress: () => router.back() }]
-          );
-          return;
-        }
-
-        // Salvar os produtos
-        for (const produto of produtos) {
-          if (!produto.nome) continue;
-          
-          await saveItem({
-            produto: produto.nome,
-            categoria: produto.categoria || 'Não categorizado',
-            quantidade: produto.quantidade || 1,
-            valor_unitario: produto.valor_unitario || produto.valor_pago / (produto.quantidade || 1),
-            valor_total: produto.valor_pago,
-            estabelecimento,
-            data,
-            chaveNota
-          });
-        }
-
-        // Registrar que a nota foi processada
-        await salvarNotaProcessada(chaveNota, estabelecimento, data);
-
-        console.log('Nota fiscal processada com sucesso');
-        router.replace("/(tabs)/");
-      } catch (error) {
-        console.error('Erro ao processar itens:', error);
-        Alert.alert('Erro', 'Não foi possível salvar todos os itens');
+        await saveItem({
+          produto: produto.nome,
+          categoria: produto.categoria || 'Não categorizado',
+          quantidade: produto.quantidade || 1,
+          valor_unitario: produto.valor_unitario || produto.valor_pago / (produto.quantidade || 1),
+          valor_total: produto.valor_pago,
+          estabelecimento,
+          data,
+          chaveNota
+        });
       }
+
+      // Registrar que a nota foi processada
+      await salvarNotaProcessada(chaveNota, estabelecimento, data);
+
+      console.log('Nota fiscal processada com sucesso');
+      router.replace("/(tabs)/");
+    } catch (error) {
+      console.error('Erro ao processar itens:', error);
+      Alert.alert('Erro', 'Não foi possível salvar todos os itens');
     }
   };
 
@@ -101,9 +116,13 @@ function useCamera() {
         analiseIA,
         blocks: []
       });
-    } catch (e) {
+    } catch (e: unknown) {
       console.error("Erro ao processar QR code:", e);
-      Alert.alert("Aviso", e.message || "Não foi possível processar o QR code");
+      if (e instanceof Error) {
+        Alert.alert("Aviso", e.message || "Não foi possível processar o QR code");
+      } else {
+        Alert.alert("Aviso", "Não foi possível processar o QR code");
+      }
       router.back(); // Volta para tela anterior em caso de erro
     } finally {
       setIsProcessingImage(false);
@@ -146,9 +165,13 @@ function useCamera() {
             }
           }
         }
-      } catch (e) {
+      } catch (e: unknown) {
         console.error("Erro ao processar imagem:", e);
-        Alert.alert("Erro", "Não foi possível processar a imagem");
+        if (e instanceof Error) {
+          Alert.alert("Erro", e.message || "Não foi possível processar a imagem");
+        } else {
+          Alert.alert("Erro", "Não foi possível processar a imagem");
+        }
       } finally {
         setIsProcessingImage(false);
         setIsProcessingIA(false);

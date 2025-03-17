@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { PurchaseItem, GroupedItems } from '../types/storage';
+import { PurchaseItem, GroupedItems, NotasFiscais } from '../types/storage';
 
 export function useStorage() {
   const [items, setItems] = useState<PurchaseItem[]>([]);
@@ -101,11 +101,12 @@ export function useStorage() {
   const groupItems = (items: PurchaseItem[]) => {
     const grouped = items.reduce((acc: GroupedItems, item) => {
       const key = item.estabelecimento;
-      const dateKey = item.data;
+      const dateKey = item.data || 'sem_data'; // Valor padrão caso a data seja undefined
       
       if (!acc[key]) {
         acc[key] = {
           valor_total: 0,
+          data: item.data, // Opcional: armazenar a data do primeiro item
           compras: {}
         };
       }
@@ -117,11 +118,9 @@ export function useStorage() {
         };
       }
       
-      // Adicionar item à data específica
+      // Resto da lógica permanece igual
       acc[key].compras[dateKey].itens.push(item);
-      // Atualizar total da data
       acc[key].compras[dateKey].valor_total += item.quantidade * item.valor_unitario;
-      // Atualizar total do estabelecimento
       acc[key].valor_total += item.quantidade * item.valor_unitario;
       
       return acc;

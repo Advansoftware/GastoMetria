@@ -9,12 +9,14 @@ export interface PurchaseItem {
   chaveNota?: string; // Identificador único da nota fiscal
 }
 
+export interface NotaProcessada {
+  estabelecimento: string;
+  data: string;
+  processadaEm: string;
+}
+
 export interface NotasFiscais {
-  [chave: string]: {
-    estabelecimento: string;
-    data: string;
-    processadaEm: string;
-  };
+  [chaveNota: string]: NotaProcessada;
 }
 
 export interface GroupedByDate {
@@ -27,6 +29,7 @@ export interface GroupedByDate {
 export interface GroupedItems {
   [estabelecimento: string]: {
     valor_total: number;
+    data?: string; // Adicionando propriedade data como opcional
     compras: GroupedByDate;
   };
 }

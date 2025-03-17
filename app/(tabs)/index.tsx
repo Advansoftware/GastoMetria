@@ -151,7 +151,9 @@ const HomeScreen = () => {
           >
             <Text style={styles.estabelecimentoNome}>{estabelecimento}</Text>
             <Text style={styles.estabelecimentoData}>
-              {new Date(dados.data).toLocaleDateString()}
+              {dados.data 
+                ? new Date(dados.data).toLocaleDateString()
+                : 'Data não disponível'}
             </Text>
             <Text style={styles.estabelecimentoTotal}>
               Total: R$ {formatarPreco(dados.valor_total)}

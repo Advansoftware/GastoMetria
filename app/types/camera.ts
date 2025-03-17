@@ -18,10 +18,25 @@ export interface ResultadoAnalise {
 
 export type AIAnalysis = ResultadoAnalise;
 
+export interface AnaliseIA {
+  estabelecimento: string;
+  data: string;
+  produtos: Array<{
+    nome: string;
+    categoria?: string;
+    quantidade?: number;
+    valor_unitario?: number;
+    valor_pago: number;
+  }>;
+  total_devido: number;
+  chaveNota: string;
+  notaProcessada?: boolean;
+}
+
 export interface ProcessedText {
   fullText: string;
-  blocks: string[];
-  analiseIA?: ResultadoAnalise;
+  blocks: any[];
+  analiseIA: AnaliseIA; // Removendo a opcionalidade
 }
 
 // Necessário para o Expo Router
