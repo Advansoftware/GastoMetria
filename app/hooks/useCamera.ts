@@ -5,7 +5,7 @@ import { CameraView, CameraType, useCameraPermissions, BarcodeScanningResult, Ba
 import useImageProcessing from './useImageProcessing';
 import useAIProcessing from './useAIProcessing';
 import useQRCodeProcessing from './useQRCodeProcessing';
-import { ProcessedText } from '../types/camera';
+import { ProcessedText } from '@/app/types/camera';
 import { useStorage } from './useStorage';
 
 function useCamera() {

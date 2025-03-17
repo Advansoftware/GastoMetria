@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { PurchaseItem, GroupedItems, NotasFiscais } from '../types/storage';
+import { PurchaseItem, GroupedItems, NotasFiscais } from '@/app/types/storage';
 
 export function useStorage() {
   const [items, setItems] = useState<PurchaseItem[]>([]);

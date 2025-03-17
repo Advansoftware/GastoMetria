@@ -4,11 +4,11 @@ import { useStorage } from '../hooks/useStorage';
 import ChartStats from '@/components/ChartStats';
 
 export default function RelatorioScreen() {
-  const { items } = useStorage();
+  const { items, groupedItems } = useStorage();
 
   return (
     <View style={styles.container}>
-      <ChartStats items={items} />
+      <ChartStats items={items} groupedItems={groupedItems} />
     </View>
   );
 }

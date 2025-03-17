@@ -1,28 +1,46 @@
 import React from 'react';
 import { View, Text, StyleSheet, ScrollView, Dimensions } from 'react-native';
 import { Select, MenuItem } from '@/components/ui/select';
-import { PurchaseItem } from '../types/storage';
+import { PurchaseItem, GroupedItems } from '@/app/types/storage';
 
-type StatsType = 'produtos' | 'estabelecimentos' | 'categorias';
+type StatsType = 'produtos' | 'estabelecimentos' | 'categorias' | 'datas';
 
 interface ChartStatsProps {
   items: PurchaseItem[];
+  groupedItems: GroupedItems;
 }
 
-const ChartStats: React.FC<ChartStatsProps> = ({ items }) => {
-  const [statsType, setStatsType] = React.useState<StatsType>('produtos');
+const ChartStats: React.FC<ChartStatsProps> = ({ items, groupedItems }) => {
+  const [statsType, setStatsType] = React.useState<StatsType>('estabelecimentos');
   const [data, setData] = React.useState<Array<{ label: string; value: number }>>([]);
 
   const processData = React.useCallback(() => {
     if (!items.length) return;
 
-    const aggregateData = items.reduce<Record<string, number>>((acc, item) => {
-      const key = statsType === 'produtos' ? item.produto :
-                 statsType === 'estabelecimentos' ? item.estabelecimento :
-                 item.categoria;
-      acc[key] = (acc[key] || 0) + item.valor_total;
-      return acc;
-    }, {});
+    let aggregateData: Record<string, number> = {};
+
+    switch (statsType) {
+      case 'estabelecimentos':
+        Object.entries(groupedItems).forEach(([estabelecimento, dados]) => {
+          aggregateData[estabelecimento] = dados.valor_total;
+        });
+        break;
+      
+      case 'datas':
+        items.reduce((acc, item) => {
+          const date = new Date(item.data).toLocaleDateString();
+          acc[date] = (acc[date] || 0) + item.valor_total;
+          return acc;
+        }, aggregateData);
+        break;
+      
+      default:
+        items.reduce((acc, item) => {
+          const key = statsType === 'produtos' ? item.produto : item.categoria;
+          acc[key] = (acc[key] || 0) + item.valor_total;
+          return acc;
+        }, aggregateData);
+    }
 
     const sortedData = Object.entries(aggregateData)
       .sort(([, a], [, b]) => b - a)
@@ -33,7 +51,7 @@ const ChartStats: React.FC<ChartStatsProps> = ({ items }) => {
       }));
 
     setData(sortedData);
-  }, [items, statsType]);
+  }, [items, groupedItems, statsType]);
 
   React.useEffect(() => {
     processData();
@@ -48,9 +66,10 @@ const ChartStats: React.FC<ChartStatsProps> = ({ items }) => {
         onChange={setStatsType}
         label="Tipo de Estatística"
       >
-        <MenuItem label="Produtos" value="produtos" />
         <MenuItem label="Estabelecimentos" value="estabelecimentos" />
+        <MenuItem label="Produtos" value="produtos" />
         <MenuItem label="Categorias" value="categorias" />
+        <MenuItem label="Por Data" value="datas" />
       </Select>
 
       <ScrollView horizontal showsHorizontalScrollIndicator={false}>
