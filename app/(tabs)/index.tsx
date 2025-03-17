@@ -75,6 +75,10 @@ const HomeScreen = () => {
     setResumo(resumoTemp);
   };
 
+  const formatarPreco = (valor: number) => {
+    return (Math.floor(valor * 100) / 100).toFixed(2);
+  };
+
   useEffect(() => {
     loadGastos();
   }, [selectedMonth, selectedYear]);
@@ -150,7 +154,7 @@ const HomeScreen = () => {
               {new Date(dados.data).toLocaleDateString()}
             </Text>
             <Text style={styles.estabelecimentoTotal}>
-              Total: R$ {dados.valor_total.toFixed(2)}
+              Total: R$ {formatarPreco(dados.valor_total)}
             </Text>
           </TouchableOpacity>
         )}

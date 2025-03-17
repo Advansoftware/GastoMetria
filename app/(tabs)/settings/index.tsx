@@ -20,8 +20,11 @@ export default function SettingsScreen() {
           style: "destructive",
           onPress: async () => {
             await clearStorage();
-            // Usar navigate ao invés de replace para forçar uma nova renderização
-            router.navigate("/(tabs)/");
+            // Forçar uma nova renderização completa retornando para a tela inicial
+            router.push({
+              pathname: '/(tabs)/',
+              params: { refresh: Date.now() } // Forçar atualização
+            });
           },
         },
       ]

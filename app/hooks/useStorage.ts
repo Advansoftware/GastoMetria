@@ -24,25 +24,31 @@ export function useStorage() {
       const stored = await AsyncStorage.getItem('purchase_items');
       let currentItems: PurchaseItem[] = stored ? JSON.parse(stored) : [];
       
+      // Manter a data exatamente como veio, sem manipulação
+      const itemParaSalvar = {
+        ...newItem,
+        data: newItem.data // Garantir que a data original seja mantida
+      };
+
       // Procurar item existente do mesmo estabelecimento com nome exatamente igual
       const existingItemIndex = currentItems.findIndex(item => 
-        item.estabelecimento === newItem.estabelecimento && 
-        item.produto.toLowerCase() === newItem.produto.toLowerCase() &&
-        Math.abs(item.valor_unitario - newItem.valor_unitario) < 0.01 // Tolerância para diferenças de centavos
+        item.estabelecimento === itemParaSalvar.estabelecimento && 
+        item.produto.toLowerCase() === itemParaSalvar.produto.toLowerCase() &&
+        Math.abs(item.valor_unitario - itemParaSalvar.valor_unitario) < 0.01 // Tolerância para diferenças de centavos
       );
 
       if (existingItemIndex >= 0) {
         // Atualizar item existente somando quantidade e valor
         currentItems[existingItemIndex] = {
           ...currentItems[existingItemIndex],
-          quantidade: currentItems[existingItemIndex].quantidade + newItem.quantidade,
-          valor_total: currentItems[existingItemIndex].valor_total + newItem.valor_total
+          quantidade: currentItems[existingItemIndex].quantidade + itemParaSalvar.quantidade,
+          valor_total: currentItems[existingItemIndex].valor_total + itemParaSalvar.valor_total
         };
         console.log('Item existente atualizado:', currentItems[existingItemIndex]);
       } else {
         // Adicionar novo item
-        currentItems.push(newItem);
-        console.log('Novo item adicionado:', newItem);
+        currentItems.push(itemParaSalvar);
+        console.log('Novo item adicionado:', itemParaSalvar);
       }
 
       await AsyncStorage.setItem('purchase_items', JSON.stringify(currentItems));
@@ -59,32 +65,32 @@ export function useStorage() {
   const groupItems = (items: PurchaseItem[]) => {
     const grouped = items.reduce((acc: GroupedItems, item) => {
       const key = item.estabelecimento;
+      const dateKey = item.data;
       
       if (!acc[key]) {
         acc[key] = {
           valor_total: 0,
-          itens: [],
-          data: item.data
+          compras: {}
+        };
+      }
+
+      if (!acc[key].compras[dateKey]) {
+        acc[key].compras[dateKey] = {
+          valor_total: 0,
+          itens: []
         };
       }
       
-      // Procurar item existente no grupo
-      const existingItemIndex = acc[key].itens.findIndex(existingItem => 
-        existingItem.produto.toLowerCase() === item.produto.toLowerCase() &&
-        Math.abs(existingItem.valor_unitario - item.valor_unitario) < 0.01
-      );
-
-      if (existingItemIndex === -1) {
-        // Adicionar novo item
-        acc[key].itens.push(item);
-      }
-      
-      acc[key].valor_total = acc[key].itens.reduce((total, item) => total + item.valor_total, 0);
+      // Adicionar item à data específica
+      acc[key].compras[dateKey].itens.push(item);
+      // Atualizar total da data
+      acc[key].compras[dateKey].valor_total += item.quantidade * item.valor_unitario;
+      // Atualizar total do estabelecimento
+      acc[key].valor_total += item.quantidade * item.valor_unitario;
       
       return acc;
     }, {});
 
-    console.log('Estabelecimentos agrupados:', Object.keys(grouped));
     setGroupedItems(grouped);
   };
 
@@ -92,7 +98,8 @@ export function useStorage() {
     try {
       await AsyncStorage.clear();
       setItems([]);
-      setGroupedItems({});
+      setGroupedItems({}); // Garantir que o estado está vazio
+      console.log('Storage limpo, itens:', []); // Debug
     } catch (error) {
       console.error('Erro ao limpar storage:', error);
     }

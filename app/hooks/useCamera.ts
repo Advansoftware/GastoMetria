@@ -30,10 +30,13 @@ function useCamera() {
       
       try {
         console.log('Total de produtos recebidos:', produtos.length);
+
+        // Usar a data exata que veio da nota fiscal, sem formatação
+        const dataCompra = data;
+        console.log('Data da compra:', dataCompra);
         
-        // Garantir que todos os produtos sejam salvos
         for (const produto of produtos) {
-          if (!produto.nome) continue; // Pular produtos sem nome
+          if (!produto.nome) continue;
           
           await saveItem({
             produto: produto.nome,
@@ -42,7 +45,7 @@ function useCamera() {
             valor_unitario: produto.valor_unitario || produto.valor_pago / (produto.quantidade || 1),
             valor_total: produto.valor_pago,
             estabelecimento,
-            data
+            data: dataCompra // Usar a data original da nota
           });
         }
 

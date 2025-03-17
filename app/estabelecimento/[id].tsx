@@ -1,6 +1,6 @@
 import React from 'react';
-import { View, Text, FlatList, StyleSheet } from 'react-native';
-import { useLocalSearchParams } from 'expo-router';
+import { View, Text, FlatList, StyleSheet, TouchableOpacity } from 'react-native';
+import { useLocalSearchParams, router } from 'expo-router';
 import { useStorage } from '../hooks/useStorage';
 
 export default function EstabelecimentoScreen() {
@@ -8,41 +8,60 @@ export default function EstabelecimentoScreen() {
   const { groupedItems } = useStorage();
   const estabelecimento = groupedItems[id as string];
 
-  console.log('Detalhes do estabelecimento:', estabelecimento);
-
   if (!estabelecimento) return null;
+
+  const formatarPreco = (valor: number) => {
+    return (Math.floor(valor * 100) / 100).toFixed(2);
+  };
+
+  const formatarData = (dataString: string) => {
+    // Retornar a data exatamente como está armazenada, sem conversões
+    return dataString;
+  };
+
+  const formatarDataParaRota = (data: string) => {
+    return encodeURIComponent(data);
+  };
+
+  const sortDates = (a: string, b: string) => {
+    const [diaA, mesA, anoA] = a.split('/').map(Number);
+    const [diaB, mesB, anoB] = b.split('/').map(Number);
+    
+    const dateA = new Date(anoA, mesA - 1, diaA);
+    const dateB = new Date(anoB, mesB - 1, diaB);
+    
+    return dateB.getTime() - dateA.getTime(); // Ordem decrescente
+  };
 
   return (
     <View style={styles.container}>
       <Text style={styles.title}>{id}</Text>
-      <Text style={styles.date}>
-        {new Date(estabelecimento.data).toLocaleDateString()}
-      </Text>
       <Text style={styles.total}>
-        Total: R$ {estabelecimento.valor_total.toFixed(2)}
-      </Text>
-      <Text style={styles.subtitle}>
-        Total de Itens: {estabelecimento.itens.length}
+        Total: R$ {formatarPreco(estabelecimento.valor_total)}
       </Text>
 
       <FlatList
-        data={estabelecimento.itens}
-        keyExtractor={(item, index) => `${item.produto}-${index}`}
-        renderItem={({ item }) => (
-          <View style={styles.productCard}>
-            <Text style={styles.productName}>{item.produto}</Text>
-            <View style={styles.productDetails}>
-              <Text style={styles.quantity}>
-                Quantidade: {item.quantidade}
-              </Text>
-              <Text style={styles.price}>
-                Valor un.: R$ {item.valor_unitario.toFixed(2)}
-              </Text>
-              <Text style={styles.totalPrice}>
-                Total: R$ {item.valor_total.toFixed(2)}
-              </Text>
-            </View>
-          </View>
+        data={Object.entries(estabelecimento.compras).sort(([dateA], [dateB]) => sortDates(dateA, dateB))}
+        keyExtractor={([date]) => date}
+        renderItem={({ item: [date, dados] }) => (
+          <TouchableOpacity 
+            style={styles.dateCard}
+            onPress={() => {
+              const dataFormatada = formatarDataParaRota(date);
+              console.log('Navegando para data formatada:', dataFormatada);
+              router.push(`estabelecimento/${id}/data/${dataFormatada}`);
+            }}
+          >
+            <Text style={styles.dateText}>
+              {formatarData(date)}
+            </Text>
+            <Text style={styles.dateTotal}>
+              Total: R$ {formatarPreco(dados.valor_total)}
+            </Text>
+            <Text style={styles.itemCount}>
+              {dados.itens.length} itens
+            </Text>
+          </TouchableOpacity>
         )}
       />
     </View>
@@ -60,17 +79,12 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     marginBottom: 8,
   },
-  date: {
-    fontSize: 16,
-    color: '#666',
-    marginBottom: 8,
-  },
   total: {
     fontSize: 20,
     color: '#007AFF',
     marginBottom: 24,
   },
-  productCard: {
+  dateCard: {
     backgroundColor: 'white',
     padding: 16,
     borderRadius: 8,
@@ -81,31 +95,18 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 4,
   },
-  productName: {
+  dateText: {
     fontSize: 18,
     fontWeight: '500',
     marginBottom: 4,
   },
-  quantity: {
+  dateTotal: {
     fontSize: 16,
-    color: '#666',
+    color: '#007AFF',
     marginBottom: 4,
   },
-  price: {
-    fontSize: 16,
-    color: '#007AFF',
-  },
-  subtitle: {
-    fontSize: 16,
+  itemCount: {
+    fontSize: 14,
     color: '#666',
-    marginBottom: 16,
   },
-  productDetails: {
-    marginTop: 8,
-  },
-  totalPrice: {
-    fontSize: 16,
-    color: '#007AFF',
-    fontWeight: 'bold',
-  }
 });

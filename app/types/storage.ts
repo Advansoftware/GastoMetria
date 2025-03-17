@@ -8,10 +8,16 @@ export interface PurchaseItem {
   data: string;
 }
 
-export interface GroupedItems {
-  [key: string]: {
+export interface GroupedByDate {
+  [date: string]: {
     valor_total: number;
     itens: PurchaseItem[];
-    data: string;
+  };
+}
+
+export interface GroupedItems {
+  [estabelecimento: string]: {
+    valor_total: number;
+    compras: GroupedByDate;
   };
 }
