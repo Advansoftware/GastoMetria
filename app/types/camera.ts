@@ -11,6 +11,9 @@ export interface ResultadoAnalise {
   data: string;
   produtos: Produto[];
   total_devido: number;
+  chaveNota: string; // Chave da NFC-e obtida do site
+  notaProcessada?: boolean;
+  stopScanning?: boolean;
 }
 
 export type AIAnalysis = ResultadoAnalise;

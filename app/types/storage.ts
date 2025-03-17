@@ -6,6 +6,15 @@ export interface PurchaseItem {
   valor_total: number;
   estabelecimento: string;
   data: string;
+  chaveNota?: string; // Identificador único da nota fiscal
+}
+
+export interface NotasFiscais {
+  [chave: string]: {
+    estabelecimento: string;
+    data: string;
+    processadaEm: string;
+  };
 }
 
 export interface GroupedByDate {

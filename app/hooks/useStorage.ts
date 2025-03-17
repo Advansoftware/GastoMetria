@@ -6,6 +6,42 @@ export function useStorage() {
   const [items, setItems] = useState<PurchaseItem[]>([]);
   const [groupedItems, setGroupedItems] = useState<GroupedItems>({});
 
+  const verificarNotaExistente = async (chaveNota: string) => {
+    try {
+      if (!chaveNota) {
+        console.warn('Tentativa de verificar nota sem chave');
+        return null;
+      }
+
+      const notasSalvas = await AsyncStorage.getItem('notas_processadas');
+      if (notasSalvas) {
+        const notas: NotasFiscais = JSON.parse(notasSalvas);
+        return notas[chaveNota];
+      }
+      return null;
+    } catch (error) {
+      console.error('Erro ao verificar nota:', error);
+      return null;
+    }
+  };
+
+  const salvarNotaProcessada = async (chaveNota: string, estabelecimento: string, data: string) => {
+    try {
+      const notasSalvas = await AsyncStorage.getItem('notas_processadas');
+      const notas: NotasFiscais = notasSalvas ? JSON.parse(notasSalvas) : {};
+      
+      notas[chaveNota] = {
+        estabelecimento,
+        data,
+        processadaEm: new Date().toISOString()
+      };
+
+      await AsyncStorage.setItem('notas_processadas', JSON.stringify(notas));
+    } catch (error) {
+      console.error('Erro ao salvar nota processada:', error);
+    }
+  };
+
   const loadItems = async () => {
     try {
       const stored = await AsyncStorage.getItem('purchase_items');
@@ -97,6 +133,7 @@ export function useStorage() {
   const clearStorage = async () => {
     try {
       await AsyncStorage.clear();
+      await AsyncStorage.removeItem('notas_processadas');
       setItems([]);
       setGroupedItems({}); // Garantir que o estado está vazio
       console.log('Storage limpo, itens:', []); // Debug
@@ -114,6 +151,8 @@ export function useStorage() {
     groupedItems,
     saveItem,
     loadItems,
-    clearStorage
+    clearStorage,
+    verificarNotaExistente,
+    salvarNotaProcessada
   };
 }

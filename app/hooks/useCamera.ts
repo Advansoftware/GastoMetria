@@ -15,7 +15,7 @@ function useCamera() {
   const { processImage } = useImageProcessing();
   const { processarTextoComIA } = useAIProcessing();
   const { processQRCode } = useQRCodeProcessing();
-  const { saveItem } = useStorage();
+  const { saveItem, verificarNotaExistente, salvarNotaProcessada } = useStorage();
   const [isProcessingImage, setIsProcessingImage] = useState(false);
   const [isProcessingIA, setIsProcessingIA] = useState(false);
   const [isScanning, setIsScanning] = useState(true);
@@ -26,15 +26,35 @@ function useCamera() {
 
   const handleProcessedText = async (resultado: ProcessedText | null) => {
     if (resultado?.analiseIA) {
-      const { estabelecimento, data, produtos, total_devido } = resultado.analiseIA;
+      setIsScanning(false); // Para o scanner antes de qualquer processamento
+      
+      // Verifica se é uma nota já processada
+      if (resultado.analiseIA.notaProcessada) {
+        setTimeout(() => {
+          Alert.alert(
+            "Nota Já Processada",
+            `Esta nota fiscal já foi processada anteriormente para o estabelecimento ${resultado.analiseIA.estabelecimento}.`
+          );
+        }, 500); // Pequeno delay para garantir que a navegação aconteceu
+        return;
+      }
+
+      const { estabelecimento, data, produtos, total_devido, chaveNota } = resultado.analiseIA;
       
       try {
-        console.log('Total de produtos recebidos:', produtos.length);
-
-        // Usar a data exata que veio da nota fiscal, sem formatação
-        const dataCompra = data;
-        console.log('Data da compra:', dataCompra);
+        // Verificar se a nota já foi processada
+        const notaExistente = await verificarNotaExistente(chaveNota);
         
+        if (notaExistente) {
+          Alert.alert(
+            "Nota Fiscal Duplicada",
+            `Esta nota fiscal já foi processada em ${new Date(notaExistente.processadaEm).toLocaleDateString()} para o estabelecimento ${notaExistente.estabelecimento}.`,
+            [{ text: "OK", onPress: () => router.back() }]
+          );
+          return;
+        }
+
+        // Salvar os produtos
         for (const produto of produtos) {
           if (!produto.nome) continue;
           
@@ -45,11 +65,15 @@ function useCamera() {
             valor_unitario: produto.valor_unitario || produto.valor_pago / (produto.quantidade || 1),
             valor_total: produto.valor_pago,
             estabelecimento,
-            data: dataCompra // Usar a data original da nota
+            data,
+            chaveNota
           });
         }
 
-        console.log('Todos os produtos foram salvos');
+        // Registrar que a nota foi processada
+        await salvarNotaProcessada(chaveNota, estabelecimento, data);
+
+        console.log('Nota fiscal processada com sucesso');
         router.replace("/(tabs)/");
       } catch (error) {
         console.error('Erro ao processar itens:', error);
@@ -79,7 +103,8 @@ function useCamera() {
       });
     } catch (e) {
       console.error("Erro ao processar QR code:", e);
-      Alert.alert("Erro", "Não foi possível processar o QR code");
+      Alert.alert("Aviso", e.message || "Não foi possível processar o QR code");
+      router.back(); // Volta para tela anterior em caso de erro
     } finally {
       setIsProcessingImage(false);
       setIsProcessingIA(false);
