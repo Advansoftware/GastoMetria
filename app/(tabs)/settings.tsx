@@ -1,6 +1,6 @@
 import React from "react";
 import { View, Text, StyleSheet, TouchableOpacity, Alert } from "react-native";
-import { useStorage } from "../../hooks/useStorage";
+import { useStorage } from "../hooks/useStorage";
 import { router } from "expo-router";
 
 export default function SettingsScreen() {

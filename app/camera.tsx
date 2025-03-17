@@ -4,11 +4,11 @@ import { CameraView, BarcodeSettings } from 'expo-camera';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useFocusEffect, router } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import useCamera from '../../hooks/useCamera';
-import styles from '../../components/CameraView/styles';
-import LoadingOverlay from '../../components/LoadingOverlay';
+import useCamera from './hooks/useCamera';
+import styles from './components/CameraView/styles';
+import LoadingOverlay from './components/LoadingOverlay';
 
-function ScanScreen() {
+function CameraScreen() {
   const [statusBarStyle, setStatusBarStyle] = useState<'light' | 'dark'>('light');
   const {
     permission,
@@ -49,15 +49,9 @@ function ScanScreen() {
   }
 
   return (
-    <View style={[styles.container, styles.cameraContainer]}>
+    <View style={styles.container}>
       <StatusBar style={statusBarStyle} />
-      <TouchableOpacity 
-        style={styles.closeButton} 
-        onPress={() => router.back()}
-      >
-        <MaterialIcons name="close" size={24} color="white" />
-      </TouchableOpacity>
-
+      
       <CameraView 
         ref={cameraRef}
         style={styles.camera}
@@ -67,7 +61,14 @@ function ScanScreen() {
         }}
         onBarcodeScanned={isScanning ? handleBarcodeScanned : undefined}
       >
-        <View style={styles.controls}>
+        <View style={styles.header}>
+          <TouchableOpacity 
+            style={styles.closeButton} 
+            onPress={() => router.back()}
+          >
+            <MaterialIcons name="close" size={24} color="white" />
+          </TouchableOpacity>
+
           <TouchableOpacity 
             style={styles.controlButton}
             onPress={toggleCameraFacing}
@@ -94,4 +95,4 @@ function ScanScreen() {
   );
 }
 
-export default ScanScreen;
+export default CameraScreen;

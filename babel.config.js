@@ -10,6 +10,7 @@ module.exports = function(api) {
         safe: true,
         allowUndefined: false,
       }],
-    ],
+      "@babel/plugin-transform-export-namespace-from"
+    ]
   };
 };

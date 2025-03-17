@@ -129,15 +129,48 @@ export function useStorage() {
     setGroupedItems(grouped);
   };
 
+  const removeEstabelecimento = async (estabelecimento: string) => {
+    try {
+      // 1. Remover itens do estabelecimento
+      const stored = await AsyncStorage.getItem('purchase_items');
+      if (stored) {
+        let currentItems: PurchaseItem[] = JSON.parse(stored);
+        currentItems = currentItems.filter(item => item.estabelecimento !== estabelecimento);
+        await AsyncStorage.setItem('purchase_items', JSON.stringify(currentItems));
+        setItems(currentItems);
+        groupItems(currentItems);
+      }
+
+      // 2. Remover notas processadas do estabelecimento
+      const notasSalvas = await AsyncStorage.getItem('notas_processadas');
+      if (notasSalvas) {
+        const notas: NotasFiscais = JSON.parse(notasSalvas);
+        // Filtrar e manter apenas as notas de outros estabelecimentos
+        const notasAtualizadas = Object.entries(notas).reduce((acc, [chave, nota]) => {
+          if (nota.estabelecimento !== estabelecimento) {
+            acc[chave] = nota;
+          }
+          return acc;
+        }, {} as NotasFiscais);
+        
+        await AsyncStorage.setItem('notas_processadas', JSON.stringify(notasAtualizadas));
+      }
+
+    } catch (error) {
+      console.error('Erro ao remover estabelecimento:', error);
+      throw error;
+    }
+  };
+
   const clearStorage = async () => {
     try {
       await AsyncStorage.clear();
       await AsyncStorage.removeItem('notas_processadas');
       setItems([]);
-      setGroupedItems({}); // Garantir que o estado está vazio
-      console.log('Storage limpo, itens:', []); // Debug
+      setGroupedItems({}); 
     } catch (error) {
       console.error('Erro ao limpar storage:', error);
+      throw error;
     }
   };
 
@@ -152,6 +185,9 @@ export function useStorage() {
     loadItems,
     clearStorage,
     verificarNotaExistente,
-    salvarNotaProcessada
+    salvarNotaProcessada,
+    removeEstabelecimento
   };
 }
+
+export default useStorage;

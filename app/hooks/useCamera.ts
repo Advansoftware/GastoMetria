@@ -90,7 +90,7 @@ function useCamera() {
       await salvarNotaProcessada(chaveNota, estabelecimento, data);
 
       console.log('Nota fiscal processada com sucesso');
-      router.replace("/(tabs)/");
+      router.replace("(tabs)");
     } catch (error) {
       console.error('Erro ao processar itens:', error);
       Alert.alert('Erro', 'Não foi possível salvar todos os itens');

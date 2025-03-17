@@ -33,3 +33,8 @@ export interface GroupedItems {
     compras: GroupedByDate;
   };
 }
+
+export default {
+  name: 'storage-types',
+  version: '1.0.0'
+};

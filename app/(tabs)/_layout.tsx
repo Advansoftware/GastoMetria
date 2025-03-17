@@ -1,16 +1,19 @@
 import { Tabs } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
 import { View, StyleSheet } from 'react-native';
+import { useRouter } from 'expo-router';
 
 export default function TabsLayout() {
+  const router = useRouter();
+
   return (
     <Tabs screenOptions={{
       headerShown: false,
       tabBarStyle: {
-        backgroundColor: '#f0f0f0', // Cor levemente mais escura que #f5f5f5
+        backgroundColor: '#f0f0f0',
         height: 65,
         borderTopWidth: 0,
-        elevation: 8, // Sombra para Android
+        elevation: 8,
         shadowColor: '#000',
         shadowOffset: {
           width: 0,
@@ -33,15 +36,12 @@ export default function TabsLayout() {
         }}
       />
       <Tabs.Screen
-        name="scan"
+        name="relatorio"
         options={{
-          title: 'Scan',
-          tabBarIcon: ({ focused }) => (
-            <View style={[styles.scanButton, focused && styles.scanButtonFocused]}>
-              <MaterialIcons name="photo-camera" size={24} color="white" />
-            </View>
+          title: "Relatório",
+          tabBarIcon: ({ color }) => (
+            <MaterialIcons name="assessment" size={24} color={color} />
           ),
-          tabBarLabelStyle: { display: 'none' }
         }}
       />
       <Tabs.Screen
@@ -62,11 +62,11 @@ const styles = StyleSheet.create({
     width: 56,
     height: 56,
     borderRadius: 28,
-    backgroundColor: '#1976d2', // MUI primary color
+    backgroundColor: '#6750A4',
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 35, // Aumentado para compensar a altura da tab bar
-    elevation: 4, // Sombra para Android
+    marginBottom: 35,
+    elevation: 4,
     shadowColor: '#000',
     shadowOffset: {
       width: 0,

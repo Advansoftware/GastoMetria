@@ -6,19 +6,22 @@ import {
   FlatList,
   StyleSheet,
   TouchableOpacity,
+  Alert,
 } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { router } from "expo-router";
 import { Button } from "@/components/ui/button";
 import { Select, MenuItem } from "@/components/ui/select";
 import { useStorage } from '../hooks/useStorage';
+import { Ionicons } from '@expo/vector-icons';
+import { MaterialIcons } from '@expo/vector-icons';
 
 const HomeScreen = () => {
   const [gastos, setGastos] = useState<any[]>([]);
   const [resumo, setResumo] = useState<any>({});
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth());
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
-  const { groupedItems, loadItems } = useStorage();
+  const { groupedItems, items, loadItems, clearStorage, removeEstabelecimento } = useStorage();
 
   const loadGastos = async () => {
     const storedData = await AsyncStorage.getItem("gastos");
@@ -89,6 +92,57 @@ const HomeScreen = () => {
     }, [])
   );
 
+  const handleClearStorage = async () => {
+    Alert.alert(
+      "Limpar Dados",
+      "Tem certeza que deseja limpar todos os dados?",
+      [
+        { text: "Cancelar", style: "cancel" },
+        { 
+          text: "Confirmar", 
+          onPress: async () => {
+            await clearStorage();
+            loadItems(); // Recarrega a lista vazia
+          },
+          style: "destructive"
+        }
+      ]
+    );
+  };
+
+  const handleRemoveEstabelecimento = async (estabelecimento: string) => {
+    Alert.alert(
+      "Remover Estabelecimento",
+      `Tem certeza que deseja remover todos os dados de ${estabelecimento}?`,
+      [
+        { text: "Cancelar", style: "cancel" },
+        { 
+          text: "Remover", 
+          onPress: async () => {
+            await removeEstabelecimento(estabelecimento);
+            loadItems(); // Recarrega a lista atualizada
+          },
+          style: "destructive"
+        }
+      ]
+    );
+  };
+
+  const handleDeletePress = (estabelecimento: string) => {
+    Alert.alert(
+      "Excluir Estabelecimento",
+      `Deseja realmente excluir todos os dados de ${estabelecimento}?`,
+      [
+        { text: "Cancelar", style: "cancel" },
+        {
+          text: "Excluir",
+          style: "destructive",
+          onPress: () => removeEstabelecimento(estabelecimento)
+        }
+      ]
+    );
+  };
+
   const meses = [
     "Janeiro",
     "Fevereiro",
@@ -137,6 +191,14 @@ const HomeScreen = () => {
             </Select>
           </View>
         </View>
+        <Button 
+          onPress={handleClearStorage}
+          style={styles.clearButton}
+          variant="contained"
+          textStyle={{ color: '#FFFFFF' }}
+        >
+          Limpar Todos os Dados
+        </Button>
       </View>
 
       <FlatList
@@ -149,18 +211,32 @@ const HomeScreen = () => {
               router.push(`/estabelecimento/${estabelecimento}`);
             }}
           >
-            <Text style={styles.estabelecimentoNome}>{estabelecimento}</Text>
-            <Text style={styles.estabelecimentoData}>
-              {dados.data 
-                ? new Date(dados.data).toLocaleDateString()
-                : 'Data não disponível'}
-            </Text>
+            <View style={styles.cardHeader}>
+              <Text style={styles.estabelecimentoNome}>{estabelecimento}</Text>
+              <TouchableOpacity
+                onPress={() => handleDeletePress(estabelecimento)}
+                hitSlop={{ top: 20, bottom: 20, left: 20, right: 20 }}
+              >
+                <Ionicons name="trash-outline" size={24} color="#FF3B30" />
+              </TouchableOpacity>
+            </View>
             <Text style={styles.estabelecimentoTotal}>
               Total: R$ {formatarPreco(dados.valor_total)}
             </Text>
           </TouchableOpacity>
         )}
       />
+
+      <TouchableOpacity
+        style={styles.fab}
+        onPress={() => router.push('/camera')}
+      >
+        <MaterialIcons 
+          name="qr-code-scanner"
+          size={24} 
+          color="white"
+        />
+      </TouchableOpacity>
     </View>
   );
 };
@@ -256,6 +332,35 @@ const styles = StyleSheet.create({
   estabelecimentoTotal: {
     fontSize: 16,
     color: "#007AFF",
+  },
+  clearButton: {
+    marginTop: 8,
+    backgroundColor: '#FF3B30',
+  } as const,
+  cardHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 4,
+  },
+  fab: {
+    position: 'absolute',
+    width: 56,
+    height: 56,
+    alignItems: 'center',
+    justifyContent: 'center',
+    right: 20,
+    bottom: 90,
+    backgroundColor: '#6750A4',
+    borderRadius: 28,
+    elevation: 8,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    shadowOpacity: 0.30,
+    shadowRadius: 4.65,
   },
 });
 

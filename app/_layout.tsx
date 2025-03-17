@@ -9,7 +9,17 @@ export default function Layout() {
         contentStyle: { backgroundColor: '#f5f5f5' }
       }}>
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen name="scanner" options={{ headerShown: false, presentation: 'fullScreenModal' }} />
+        <Stack.Screen 
+          name="camera" 
+          options={{ 
+            headerShown: false,
+            presentation: 'fullScreenModal',
+            animation: 'fade',
+            contentStyle: {
+              backgroundColor: 'black'
+            }
+          }} 
+        />
         <Stack.Screen name="estabelecimento/[id]" options={{ headerShown: true, title: 'Estabelecimento' }} />
         <Stack.Screen name="estabelecimento/[id]/data/[date]" options={{ headerShown: true, title: 'Detalhes da Compra' }} />
       </Stack>
