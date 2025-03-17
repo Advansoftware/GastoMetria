@@ -21,17 +21,31 @@ export function useStorage() {
 
   const saveItem = async (newItem: PurchaseItem) => {
     try {
-      // Primeiro, carregar os itens existentes do AsyncStorage
       const stored = await AsyncStorage.getItem('purchase_items');
       let currentItems: PurchaseItem[] = stored ? JSON.parse(stored) : [];
       
-      // Adicionar o novo item
-      currentItems.push(newItem);
-      
-      // Salvar no AsyncStorage
+      // Procurar item existente do mesmo estabelecimento com nome exatamente igual
+      const existingItemIndex = currentItems.findIndex(item => 
+        item.estabelecimento === newItem.estabelecimento && 
+        item.produto.toLowerCase() === newItem.produto.toLowerCase() &&
+        Math.abs(item.valor_unitario - newItem.valor_unitario) < 0.01 // Tolerância para diferenças de centavos
+      );
+
+      if (existingItemIndex >= 0) {
+        // Atualizar item existente somando quantidade e valor
+        currentItems[existingItemIndex] = {
+          ...currentItems[existingItemIndex],
+          quantidade: currentItems[existingItemIndex].quantidade + newItem.quantidade,
+          valor_total: currentItems[existingItemIndex].valor_total + newItem.valor_total
+        };
+        console.log('Item existente atualizado:', currentItems[existingItemIndex]);
+      } else {
+        // Adicionar novo item
+        currentItems.push(newItem);
+        console.log('Novo item adicionado:', newItem);
+      }
+
       await AsyncStorage.setItem('purchase_items', JSON.stringify(currentItems));
-      
-      // Atualizar o estado
       setItems(currentItems);
       groupItems(currentItems);
       
@@ -43,8 +57,6 @@ export function useStorage() {
   };
 
   const groupItems = (items: PurchaseItem[]) => {
-    console.log('Iniciando agrupamento de', items.length, 'itens');
-    
     const grouped = items.reduce((acc: GroupedItems, item) => {
       const key = item.estabelecimento;
       
@@ -56,17 +68,23 @@ export function useStorage() {
         };
       }
       
-      acc[key].itens.push(item);
-      acc[key].valor_total += item.valor_total;
+      // Procurar item existente no grupo
+      const existingItemIndex = acc[key].itens.findIndex(existingItem => 
+        existingItem.produto.toLowerCase() === item.produto.toLowerCase() &&
+        Math.abs(existingItem.valor_unitario - item.valor_unitario) < 0.01
+      );
+
+      if (existingItemIndex === -1) {
+        // Adicionar novo item
+        acc[key].itens.push(item);
+      }
+      
+      acc[key].valor_total = acc[key].itens.reduce((total, item) => total + item.valor_total, 0);
       
       return acc;
     }, {});
 
-    console.log('Estabelecimentos encontrados:', Object.keys(grouped));
-    Object.keys(grouped).forEach(key => {
-      console.log(`Itens em ${key}:`, grouped[key].itens.length);
-    });
-
+    console.log('Estabelecimentos agrupados:', Object.keys(grouped));
     setGroupedItems(grouped);
   };
 
