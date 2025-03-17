@@ -1,13 +1,8 @@
 import { Tabs } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
-import { View, StyleSheet, TouchableOpacity } from 'react-native';
-import { router } from 'expo-router';
+import { View, StyleSheet } from 'react-native';
 
 export default function TabsLayout() {
-  const openScanner = () => {
-    router.push("/scanner");
-  };
-
   return (
     <Tabs screenOptions={{
       headerShown: false,
@@ -39,14 +34,8 @@ export default function TabsLayout() {
       />
       <Tabs.Screen
         name="scan"
-        listeners={{
-          tabPress: (e) => {
-            e.preventDefault();
-            openScanner();
-          },
-        }}
         options={{
-          title: '',
+          title: 'Scan',
           tabBarIcon: ({ focused }) => (
             <View style={[styles.scanButton, focused && styles.scanButtonFocused]}>
               <MaterialIcons name="photo-camera" size={24} color="white" />
