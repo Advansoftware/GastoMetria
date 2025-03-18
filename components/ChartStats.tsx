@@ -14,20 +14,29 @@ const ChartStats: React.FC<ChartStatsProps> = ({ items, groupedItems }) => {
   const [statsType, setStatsType] = React.useState<StatsType>('estabelecimentos');
   const [data, setData] = React.useState<Array<{ label: string; value: number }>>([]);
 
+  // Memoizar os items e groupedItems para evitar recriações desnecessárias
+  const memoizedItems = React.useMemo(() => items, [items]);
+  const memoizedGroupedItems = React.useMemo(() => groupedItems, [groupedItems]);
+
   const processData = React.useCallback(() => {
-    if (!items.length) return;
+    if (!memoizedItems?.length) {
+      setData([]);
+      return;
+    }
 
     let aggregateData: Record<string, number> = {};
 
     switch (statsType) {
       case 'estabelecimentos':
-        Object.entries(groupedItems).forEach(([estabelecimento, dados]) => {
-          aggregateData[estabelecimento] = dados.valor_total;
-        });
+        if (memoizedGroupedItems) {
+          Object.entries(memoizedGroupedItems).forEach(([estabelecimento, dados]) => {
+            aggregateData[estabelecimento] = dados.valor_total;
+          });
+        }
         break;
       
       case 'datas':
-        items.reduce((acc, item) => {
+        memoizedItems.reduce((acc, item) => {
           const date = new Date(item.data).toLocaleDateString();
           acc[date] = (acc[date] || 0) + item.valor_total;
           return acc;
@@ -35,7 +44,7 @@ const ChartStats: React.FC<ChartStatsProps> = ({ items, groupedItems }) => {
         break;
       
       default:
-        items.reduce((acc, item) => {
+        memoizedItems.reduce((acc, item) => {
           const key = statsType === 'produtos' ? item.produto : item.categoria;
           acc[key] = (acc[key] || 0) + item.valor_total;
           return acc;
@@ -51,7 +60,7 @@ const ChartStats: React.FC<ChartStatsProps> = ({ items, groupedItems }) => {
       }));
 
     setData(sortedData);
-  }, [items, groupedItems, statsType]);
+  }, [memoizedItems, memoizedGroupedItems, statsType]);
 
   React.useEffect(() => {
     processData();
@@ -72,22 +81,28 @@ const ChartStats: React.FC<ChartStatsProps> = ({ items, groupedItems }) => {
         <MenuItem label="Por Data" value="datas" />
       </Select>
 
-      <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-        <View style={styles.chart}>
-          {data.map((item, index) => (
-            <View key={index} style={styles.barContainer}>
-              <Text style={styles.value}>R$ {item.value.toFixed(2)}</Text>
-              <View style={styles.barWrapper}>
-                <View style={[
-                  styles.bar,
-                  { height: (item.value / maxValue) * 200 }
-                ]} />
+      {data.length > 0 ? (
+        <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+          <View style={styles.chart}>
+            {data.map((item, index) => (
+              <View key={index} style={styles.barContainer}>
+                <Text style={styles.value}>R$ {item.value.toFixed(2)}</Text>
+                <View style={styles.barWrapper}>
+                  <View style={[
+                    styles.bar,
+                    { height: (item.value / maxValue) * 200 }
+                  ]} />
+                </View>
+                <Text style={styles.label} numberOfLines={2}>{item.label}</Text>
               </View>
-              <Text style={styles.label} numberOfLines={2}>{item.label}</Text>
-            </View>
-          ))}
+            ))}
+          </View>
+        </ScrollView>
+      ) : (
+        <View style={styles.emptyState}>
+          <Text style={styles.emptyText}>Nenhum dado disponível</Text>
         </View>
-      </ScrollView>
+      )}
     </View>
   );
 };
@@ -136,6 +151,15 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginTop: 8,
     width: 60,
+  },
+  emptyState: {
+    padding: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  emptyText: {
+    color: '#666',
+    fontSize: 16,
   }
 });
 
