@@ -6,7 +6,7 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { Card } from '@/components/ui/Card';
 import { StatsGrid } from '@/components/ui/StatsCard';
 import { Colors } from '@/constants/Colors';
-import { useColorScheme } from '@/hooks/useColorScheme';
+import { useTheme } from '@/contexts/ThemeContext';
 import { useWebLayout } from '@/hooks/useWebLayout';
 import { DesktopEstabelecimentoView } from '@/components/ui/DesktopEstabelecimentoView';
 import Animated, { FadeInDown, FadeInRight } from 'react-native-reanimated';
@@ -15,8 +15,8 @@ import { tw } from '@/utils/tailwind';
 export default function EstabelecimentoScreen() {
   const { id } = useLocalSearchParams();
   const { groupedItems } = useStorage();
-  const colorScheme = useColorScheme() ?? 'light';
-  const colors = Colors[colorScheme];
+  const { effectiveTheme } = useTheme();
+  const colors = Colors[effectiveTheme];
   const { isDesktop } = useWebLayout();
   
   const estabelecimento = groupedItems[id as string];

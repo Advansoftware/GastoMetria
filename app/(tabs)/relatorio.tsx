@@ -3,7 +3,7 @@ import { ScrollView, Text, RefreshControl } from 'react-native';
 import { useStorage } from '../hooks/useStorage';
 import { useFocusEffect } from 'expo-router';
 import { Colors } from '@/constants/Colors';
-import { useColorScheme } from '@/hooks/useColorScheme';
+import { useTheme } from '@/contexts/ThemeContext';
 import { ModernChart } from '@/components/ui/ModernChart';
 import { StatsGrid } from '@/components/ui/StatsCard';
 import { Card } from '@/components/ui/Card';
@@ -18,8 +18,8 @@ export default function RelatorioScreen() {
   const { items, loadItems } = useStorage();
   const [refreshing, setRefreshing] = useState(false);
   const [timeFilter, setTimeFilter] = useState<'7d' | '30d' | '3m' | 'all'>('30d');
-  const colorScheme = useColorScheme() ?? 'light';
-  const colors = Colors[colorScheme];
+  const { effectiveTheme } = useTheme();
+  const colors = Colors[effectiveTheme];
   const { isDesktop } = useWebLayout();
 
   // Focus effect hook

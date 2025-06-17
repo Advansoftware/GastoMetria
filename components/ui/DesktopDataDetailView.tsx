@@ -5,7 +5,7 @@ import { useStorage } from '@/app/hooks/useStorage';
 import { MaterialIcons } from '@expo/vector-icons';
 import { Card } from '@/components/ui/Card';
 import { Colors } from '@/constants/Colors';
-import { useColorScheme } from '@/hooks/useColorScheme';
+import { useTheme } from '@/contexts/ThemeContext';
 import { StatCard } from '@/components/ui/StatsCard';
 import { PurchaseItem } from '@/app/types/storage';
 import Animated, { FadeInDown, FadeInRight } from 'react-native-reanimated';
@@ -14,8 +14,8 @@ import { tw } from '@/utils/tailwind';
 export function DesktopDataDetailView() {
   const { id, date } = useLocalSearchParams();
   const { groupedItems } = useStorage();
-  const colorScheme = useColorScheme() ?? 'light';
-  const colors = Colors[colorScheme];
+  const { effectiveTheme } = useTheme();
+  const colors = Colors[effectiveTheme];
 
   const decodedDate = decodeURIComponent(date as string);
   const estabelecimento = groupedItems[id as string];

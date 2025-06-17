@@ -5,7 +5,7 @@ import { useStorage } from '../hooks/useStorage';
 import { MaterialIcons } from '@expo/vector-icons';
 import { Card } from '@/components/ui/Card';
 import { Colors } from '@/constants/Colors';
-import { useColorScheme } from '@/hooks/useColorScheme';
+import { useTheme } from '@/contexts/ThemeContext';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { tw } from '@/utils/tailwind';
 
@@ -13,8 +13,8 @@ export default function EstabelecimentoScreen() {
   const { id } = useLocalSearchParams();
   const { groupedItems } = useStorage();
   const estabelecimento = groupedItems[id as string];
-  const colorScheme = useColorScheme() ?? 'light';
-  const colors = Colors[colorScheme];
+  const { effectiveTheme } = useTheme();
+  const colors = Colors[effectiveTheme];
 
   if (!estabelecimento) return null;
 

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, Dimensions } from 'react-native';
 import { Colors } from '@/constants/Colors';
-import { useColorScheme } from '@/hooks/useColorScheme';
+import { useTheme } from '@/contexts/ThemeContext';
 import { tw } from '@/utils/tailwind';
 import { usePlatformCapabilities } from '@/hooks/usePlatform';
 
@@ -50,8 +50,8 @@ export function ModernChart({
   showGrid = true,
   animated = true 
 }: ModernChartProps) {
-  const colorScheme = useColorScheme() ?? 'light';
-  const colors = Colors[colorScheme];
+  const { effectiveTheme } = useTheme();
+  const colors = Colors[effectiveTheme];
   const { isWeb } = usePlatformCapabilities();
 
   // Para ambiente web, vamos renderizar uma visualização mais rica

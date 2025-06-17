@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, ScrollView, Alert, Switch, Clipboard, Platform } from 'react-native';
 import { useStorage } from '@/app/hooks/useStorage';
 import { Colors } from '@/constants/Colors';
-import { useColorScheme } from '@/hooks/useColorScheme';
+import { useTheme } from '@/contexts/ThemeContext';
 import { MaterialIcons } from '@expo/vector-icons';
 import { Card } from '@/components/ui/Card';
 import { ModernButton } from '@/components/ui/ModernButton';
@@ -18,8 +18,8 @@ export function WebSettingsPage() {
   const [autoBackupEnabled, setAutoBackupEnabled] = useState(false);
   const [webServiceEnabled, setWebServiceEnabled] = useState(true);
   const [serverAddress, setServerAddress] = useState('');
-  const colorScheme = useColorScheme() ?? 'light';
-  const colors = Colors[colorScheme];
+  const { effectiveTheme } = useTheme();
+  const colors = Colors[effectiveTheme];
 
   // Obtém o endereço IP local
   useEffect(() => {

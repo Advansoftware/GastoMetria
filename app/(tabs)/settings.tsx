@@ -3,7 +3,7 @@ import { View, Text, Alert, ScrollView, Switch } from "react-native";
 import { useStorage } from "../hooks/useStorage";
 import { router } from "expo-router";
 import { Colors } from '@/constants/Colors';
-import { useColorScheme } from '@/hooks/useColorScheme';
+import { useTheme } from '@/contexts/ThemeContext';
 import { MaterialIcons } from '@expo/vector-icons';
 import { ModernButton } from '@/components/ui/ModernButton';
 import { Card } from '@/components/ui/Card';
@@ -15,9 +15,8 @@ import { useWebLayout } from '@/hooks/useWebLayout';
 export default function SettingsScreen() {
   const { clearStorage } = useStorage();
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
-  const [darkModeEnabled, setDarkModeEnabled] = useState(false);
-  const colorScheme = useColorScheme() ?? 'light';
-  const colors = Colors[colorScheme];
+  const { themeMode, setThemeMode, effectiveTheme } = useTheme();
+  const colors = Colors[effectiveTheme];
   const { isDesktop } = useWebLayout();
 
   // Se for desktop, mostrar a versão web
@@ -65,7 +64,7 @@ export default function SettingsScreen() {
     <Card variant="outlined" style={tw('mb-3')}>
       <View style={tw('flex-row items-center justify-between p-4')}>
         <View style={tw('flex-row items-center flex-1')}>
-          <View style={[tw('w-10 h-10 rounded-full items-center justify-center mr-3'), { backgroundColor: colorScheme === 'dark' ? colors.primary + '30' : colors.primary + '20' }]}>
+          <View style={[tw('w-10 h-10 rounded-full items-center justify-center mr-3'), { backgroundColor: effectiveTheme === 'dark' ? colors.primary + '30' : colors.primary + '20' }]}>
             <MaterialIcons name={icon} size={20} color={colors.primary} />
           </View>
           <View style={tw('flex-1')}>
@@ -125,16 +124,44 @@ export default function SettingsScreen() {
 
           <SettingItem
             icon="dark-mode"
-            title="Modo Escuro"
-            subtitle="Alternar tema do aplicativo"
-            rightElement={
-              <Switch
-                value={darkModeEnabled}
-                onValueChange={setDarkModeEnabled}
-                trackColor={{ false: colors.border, true: colors.primary + '40' }}
-                thumbColor={darkModeEnabled ? colors.primary : colors.textSecondary}
-              />
+            title="Tema do App"
+            subtitle={
+              themeMode === 'system' 
+                ? 'Seguir sistema' 
+                : themeMode === 'dark' 
+                  ? 'Modo escuro' 
+                  : 'Modo claro'
             }
+            rightElement={
+              <MaterialIcons name="chevron-right" size={24} color={colors.textSecondary} />
+            }
+            onPress={() => {
+              Alert.alert(
+                "Escolher Tema",
+                "Selecione o tema do aplicativo:",
+                [
+                  {
+                    text: "Seguir Sistema",
+                    onPress: () => setThemeMode('system'),
+                    style: themeMode === 'system' ? 'default' : 'default'
+                  },
+                  {
+                    text: "Modo Claro",
+                    onPress: () => setThemeMode('light'),
+                    style: themeMode === 'light' ? 'default' : 'default'
+                  },
+                  {
+                    text: "Modo Escuro",
+                    onPress: () => setThemeMode('dark'),
+                    style: themeMode === 'dark' ? 'default' : 'default'
+                  },
+                  {
+                    text: "Cancelar",
+                    style: "cancel"
+                  }
+                ]
+              );
+            }}
           />
         </Animated.View>
 

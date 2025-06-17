@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, ScrollView } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { Colors } from '@/constants/Colors';
-import { useColorScheme } from '@/hooks/useColorScheme';
+import { useTheme } from '@/contexts/ThemeContext';
 import { tw } from '@/utils/tailwind';
 import { router, usePathname } from 'expo-router';
 
@@ -12,8 +12,8 @@ interface DesktopLayoutProps {
 
 export function DesktopLayout({ children }: DesktopLayoutProps) {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-  const colorScheme = useColorScheme() ?? 'light';
-  const colors = Colors[colorScheme];
+  const { effectiveTheme } = useTheme();
+  const colors = Colors[effectiveTheme];
   const pathname = usePathname();
 
   const navigationItems = [

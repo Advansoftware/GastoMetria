@@ -2,7 +2,7 @@ import React from 'react';
 import { Pressable, Text, ActivityIndicator, PressableProps } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { Colors } from '@/constants/Colors';
-import { useColorScheme } from '@/hooks/useColorScheme';
+import { useTheme } from '@/contexts/ThemeContext';
 import { tw } from '@/utils/tailwind';
 
 export interface ModernButtonProps extends Omit<PressableProps, 'style'> {
@@ -28,8 +28,8 @@ export function ModernButton({
   onPress,
   ...props
 }: ModernButtonProps) {
-  const colorScheme = useColorScheme() ?? 'light';
-  const colors = Colors[colorScheme];
+  const { effectiveTheme } = useTheme();
+  const colors = Colors[effectiveTheme];
 
   // Base classes for button
   const getButtonStyle = () => {

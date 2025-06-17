@@ -2,13 +2,13 @@ import { Tabs } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
 import { View } from 'react-native';
 import { Colors } from '@/constants/Colors';
-import { useColorScheme } from '@/hooks/useColorScheme';
+import { useTheme } from '@/contexts/ThemeContext';
 import { useWebLayout } from '@/hooks/useWebLayout';
 import { tw } from '@/utils/tailwind';
 
 export default function TabsLayout() {
-  const colorScheme = useColorScheme() ?? 'light';
-  const colors = Colors[colorScheme];
+  const { effectiveTheme } = useTheme();
+  const colors = Colors[effectiveTheme];
   const { isDesktop } = useWebLayout();
 
   return (
@@ -43,7 +43,7 @@ export default function TabsLayout() {
         options={{
           title: 'Início',
           tabBarIcon: ({ color, size, focused }) => (
-            <View style={[tw('p-1 rounded-lg'), focused && { backgroundColor: colorScheme === 'dark' ? colors.primary + '30' : colors.primary + '20' }]}>
+            <View style={[tw('p-1 rounded-lg'), focused && { backgroundColor: effectiveTheme === 'dark' ? colors.primary + '30' : colors.primary + '20' }]}>
               <MaterialIcons name="home" size={size} color={color} />
             </View>
           ),
@@ -55,7 +55,7 @@ export default function TabsLayout() {
         options={{
           title: "Relatório",
           tabBarIcon: ({ color, size, focused }) => (
-            <View style={[tw('p-1 rounded-lg'), focused && { backgroundColor: colorScheme === 'dark' ? colors.primary + '30' : colors.primary + '20' }]}>
+            <View style={[tw('p-1 rounded-lg'), focused && { backgroundColor: effectiveTheme === 'dark' ? colors.primary + '30' : colors.primary + '20' }]}>
               <MaterialIcons name="assessment" size={size} color={color} />
             </View>
           ),
@@ -67,7 +67,7 @@ export default function TabsLayout() {
         options={{
           title: 'Configurações',
           tabBarIcon: ({ color, size, focused }) => (
-            <View style={[tw('p-1 rounded-lg'), focused && { backgroundColor: colorScheme === 'dark' ? colors.primary + '30' : colors.primary + '20' }]}>
+            <View style={[tw('p-1 rounded-lg'), focused && { backgroundColor: effectiveTheme === 'dark' ? colors.primary + '30' : colors.primary + '20' }]}>
               <MaterialIcons name="settings" size={size} color={color} />
             </View>
           ),

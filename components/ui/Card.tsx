@@ -1,8 +1,8 @@
 import React from 'react';
-import { View, ViewProps, StyleSheet } from 'react-native';
+import { View, ViewProps } from 'react-native';
 import { tw } from '@/utils/tailwind';
 import { Colors } from '@/constants/Colors';
-import { useColorScheme } from '@/hooks/useColorScheme';
+import { useTheme } from '@/contexts/ThemeContext';
 
 interface CardProps extends ViewProps {
   children: React.ReactNode;
@@ -17,8 +17,8 @@ export function Card({
   style,
   ...props
 }: CardProps) {
-  const colorScheme = useColorScheme() ?? 'light';
-  const colors = Colors[colorScheme];
+  const { effectiveTheme } = useTheme();
+  const colors = Colors[effectiveTheme];
   
   const getCardStyle = () => {
     const baseStyle = tw('rounded-xl');
@@ -31,7 +31,7 @@ export function Card({
         {
           shadowColor: colors.shadow,
           shadowOffset: { width: 0, height: 4 },
-          shadowOpacity: colorScheme === 'dark' ? 0.3 : 0.15,
+          shadowOpacity: effectiveTheme === 'dark' ? 0.3 : 0.15,
           shadowRadius: 8,
           elevation: 4,
         }

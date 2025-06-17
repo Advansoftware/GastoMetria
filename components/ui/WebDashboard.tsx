@@ -2,7 +2,7 @@ import React, { useMemo } from 'react';
 import { View, Text, ScrollView } from 'react-native';
 import { useStorage } from '@/app/hooks/useStorage';
 import { Colors } from '@/constants/Colors';
-import { useColorScheme } from '@/hooks/useColorScheme';
+import { useTheme } from '@/contexts/ThemeContext';
 import { MaterialIcons } from '@expo/vector-icons';
 import { Card } from '@/components/ui/Card';
 import { ModernChart } from '@/components/ui/ModernChart';
@@ -13,8 +13,8 @@ import Animated, { FadeInDown, FadeInRight } from 'react-native-reanimated';
 
 export function WebDashboard() {
   const { items, groupedItems } = useStorage();
-  const colorScheme = useColorScheme() ?? 'light';
-  const colors = Colors[colorScheme];
+  const { effectiveTheme } = useTheme();
+  const colors = Colors[effectiveTheme];
 
   const dashboardStats = useMemo(() => {
     const totalGasto = items.reduce((sum, item) => sum + item.valor_total, 0);

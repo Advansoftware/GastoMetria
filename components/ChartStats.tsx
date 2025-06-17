@@ -3,7 +3,7 @@ import { View, Text, ScrollView, Dimensions } from 'react-native';
 import { Select, MenuItem } from '@/components/ui/select';
 import { PurchaseItem, GroupedItems } from '@/app/types/storage';
 import { Colors } from '@/constants/Colors';
-import { useColorScheme } from '@/hooks/useColorScheme';
+import { useTheme } from '@/contexts/ThemeContext';
 import { MaterialIcons } from '@expo/vector-icons';
 import Animated, { FadeInUp, FadeInDown } from 'react-native-reanimated';
 import { tw } from '@/utils/tailwind';
@@ -18,8 +18,8 @@ interface ChartStatsProps {
 const ChartStats: React.FC<ChartStatsProps> = ({ items, groupedItems }) => {
   const [statsType, setStatsType] = React.useState<StatsType>('estabelecimentos');
   const [data, setData] = React.useState<Array<{ label: string; value: number }>>([]);
-  const colorScheme = useColorScheme() ?? 'light';
-  const colors = Colors[colorScheme];
+  const { effectiveTheme } = useTheme();
+  const colors = Colors[effectiveTheme];
 
   // Memoizar os items e groupedItems para evitar recriações desnecessárias
   const memoizedItems = React.useMemo(() => items, [items]);

@@ -3,7 +3,7 @@ import { View, Text, ScrollView, RefreshControl } from 'react-native';
 import { useStorage } from '@/app/hooks/useStorage';
 import { useFocusEffect } from 'expo-router';
 import { Colors } from '@/constants/Colors';
-import { useColorScheme } from '@/hooks/useColorScheme';
+import { useTheme } from '@/contexts/ThemeContext';
 import { ModernChart } from '@/components/ui/ModernChart';
 import { StatCard } from '@/components/ui/StatsCard';
 import { Card } from '@/components/ui/Card';
@@ -15,8 +15,8 @@ import { MaterialIcons } from '@expo/vector-icons';
 export function WebReportsPage() {
   const { items, groupedItems, loadItems } = useStorage();
   const [refreshing, setRefreshing] = useState(false);
-  const colorScheme = useColorScheme() ?? 'light';
-  const colors = Colors[colorScheme];
+  const { effectiveTheme } = useTheme();
+  const colors = Colors[effectiveTheme];
 
   useFocusEffect(
     React.useCallback(() => {

@@ -9,7 +9,7 @@ import {
 } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { Colors } from '@/constants/Colors';
-import { useColorScheme } from '@/hooks/useColorScheme';
+import { useTheme } from '@/contexts/ThemeContext';
 import { tw } from '@/utils/tailwind';
 
 interface ModernInputProps extends Omit<TextInputProps, 'style'> {
@@ -44,8 +44,8 @@ export function ModernInput({
   const [isFocused, setIsFocused] = useState(false);
   const [hasValue, setHasValue] = useState(!!value);
   const labelAnim = useRef(new Animated.Value(value ? 1 : 0)).current;
-  const colorScheme = useColorScheme() ?? 'light';
-  const colors = Colors[colorScheme];
+  const { effectiveTheme } = useTheme();
+  const colors = Colors[effectiveTheme];
 
   const handleFocus = (event: any) => {
     setIsFocused(true);

@@ -13,7 +13,7 @@ import { router } from "expo-router";
 import { useStorage } from '../hooks/useStorage';
 import { MaterialIcons } from '@expo/vector-icons';
 import { Colors } from '@/constants/Colors';
-import { useColorScheme } from '@/hooks/useColorScheme';
+import { useTheme } from '@/contexts/ThemeContext';
 import { Card } from '@/components/ui/Card';
 import { StatsGrid } from '@/components/ui/StatsCard';
 import { ModernButton } from '@/components/ui/ModernButton';
@@ -30,8 +30,8 @@ const HomeScreen = () => {
   const [refreshing, setRefreshing] = useState(false);
   const [selectedFilter, setSelectedFilter] = useState<'all' | 'today' | 'week' | 'month'>('month');
   const { groupedItems, items, loadItems, clearStorage, removeEstabelecimento } = useStorage();
-  const colorScheme = useColorScheme() ?? 'light';
-  const colors = Colors[colorScheme];
+  const { effectiveTheme } = useTheme();
+  const colors = Colors[effectiveTheme];
   const { isWeb, isMobile, hasCamera } = usePlatformCapabilities();
   const { isDesktop } = useWebLayout();
 

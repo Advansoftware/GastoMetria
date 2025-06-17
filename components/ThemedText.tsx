@@ -1,5 +1,5 @@
 import { Text, type TextProps } from 'react-native';
-import { useColorScheme } from '@/hooks/useColorScheme';
+import { useTheme } from '@/contexts/ThemeContext';
 import { Colors } from '@/constants/Colors';
 import { tw } from '@/utils/tailwind';
 
@@ -16,12 +16,12 @@ export function ThemedText({
   type = 'default',
   ...rest
 }: ThemedTextProps) {
-  const colorScheme = useColorScheme() ?? 'light';
-  const colors = Colors[colorScheme];
+  const { effectiveTheme } = useTheme();
+  const colors = Colors[effectiveTheme];
 
   const getColor = () => {
-    if (lightColor && colorScheme === 'light') return lightColor;
-    if (darkColor && colorScheme === 'dark') return darkColor;
+    if (lightColor && effectiveTheme === 'light') return lightColor;
+    if (darkColor && effectiveTheme === 'dark') return darkColor;
     
     switch (type) {
       case 'title':

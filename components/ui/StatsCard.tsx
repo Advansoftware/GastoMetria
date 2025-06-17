@@ -2,7 +2,7 @@ import React from 'react';
 import { View, Text } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { Colors } from '@/constants/Colors';
-import { useColorScheme } from '@/hooks/useColorScheme';
+import { useTheme } from '@/contexts/ThemeContext';
 import { Card } from './Card';
 import { tw } from '@/utils/tailwind';
 
@@ -25,8 +25,8 @@ export function StatCard({
   trendValue,
   color 
 }: StatCardProps) {
-  const colorScheme = useColorScheme() ?? 'light';
-  const colors = Colors[colorScheme];
+  const { effectiveTheme } = useTheme();
+  const colors = Colors[effectiveTheme];
 
   const getTrendColor = () => {
     switch (trend) {

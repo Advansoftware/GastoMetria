@@ -1,11 +1,11 @@
 import React from 'react';
-import { View, Text, FlatList, TouchableOpacity, ScrollView } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView } from 'react-native';
 import { useLocalSearchParams, router } from 'expo-router';
 import { useStorage } from '@/app/hooks/useStorage';
 import { MaterialIcons } from '@expo/vector-icons';
 import { Card } from '@/components/ui/Card';
 import { Colors } from '@/constants/Colors';
-import { useColorScheme } from '@/hooks/useColorScheme';
+import { useTheme } from '@/contexts/ThemeContext';
 import { StatCard } from '@/components/ui/StatsCard';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { tw } from '@/utils/tailwind';
@@ -14,8 +14,8 @@ export function DesktopEstabelecimentoView() {
   const { id } = useLocalSearchParams();
   const { groupedItems } = useStorage();
   const estabelecimento = groupedItems[id as string];
-  const colorScheme = useColorScheme() ?? 'light';
-  const colors = Colors[colorScheme];
+  const { effectiveTheme } = useTheme();
+  const colors = Colors[effectiveTheme];
 
   if (!estabelecimento) {
     return (

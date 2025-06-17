@@ -4,18 +4,22 @@ import { CameraView } from 'expo-camera';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useFocusEffect, router } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import useCamera from './hooks/useCamera';
 import LoadingOverlay from './components/LoadingOverlay';
 import { ModernButton } from '@/components/ui/ModernButton';
 import { Card } from '@/components/ui/Card';
 import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
 import { usePlatformCapabilities } from '@/hooks/usePlatform';
+import { useTheme } from '@/contexts/ThemeContext';
 import { tw } from '@/utils/tailwind';
 
 function CameraScreen() {
-  const [statusBarStyle, setStatusBarStyle] = useState<'light' | 'dark'>('light');
   const [isComponentMounted, setIsComponentMounted] = useState(true);
   const { isWeb } = usePlatformCapabilities();
+  const { isDark } = useTheme();
+  const insets = useSafeAreaInsets();
+  
   const {
     permission,
     requestPermission,
@@ -36,12 +40,10 @@ function CameraScreen() {
   useFocusEffect(
     React.useCallback(() => {
       console.log('CameraScreen: Componente focado');
-      setStatusBarStyle('light');
       setIsComponentMounted(true);
       
       return () => {
         console.log('CameraScreen: Componente desfocado - iniciando cleanup');
-        setStatusBarStyle('dark');
         setIsComponentMounted(false);
         
         // Garantir que o scanner seja desabilitado quando sair da tela
@@ -55,19 +57,23 @@ function CameraScreen() {
 
   // Web version - show information instead of camera
   if (isWeb) {
+    const webBgColor = isDark ? '#111827' : '#f9fafb';
+    const headerBgColor = isDark ? '#1f2937' : '#ffffff';
+    const textColor = isDark ? '#f9fafb' : '#1f2937';
+    
     return (
-      <View style={[tw('flex-1'), { backgroundColor: '#f9fafb' }]}>
-        <StatusBar style="dark" />
+      <View style={[tw('flex-1'), { backgroundColor: webBgColor }]}>
+        <StatusBar style={isDark ? 'light' : 'dark'} />
         
         {/* Header */}
-        <View style={tw('flex-row items-center justify-between p-4 bg-white')}>
+        <View style={[tw('flex-row items-center justify-between p-4'), { backgroundColor: headerBgColor }]}>
           <TouchableOpacity 
             style={tw('w-10 h-10 rounded-full items-center justify-center')}
             onPress={() => router.back()}
           >
-            <MaterialIcons name="arrow-back" size={24} color="#1f2937" />
+            <MaterialIcons name="arrow-back" size={24} color={textColor} />
           </TouchableOpacity>
-          <Text style={tw('text-lg font-semibold text-gray-900')}>
+          <Text style={[tw('text-lg font-semibold'), { color: textColor }]}>
             Câmera
           </Text>
           <View style={tw('w-10')} />
@@ -126,7 +132,8 @@ function CameraScreen() {
 
   if (!permission.granted) {
     return (
-      <View style={[tw('flex-1 justify-center items-center px-8'), { backgroundColor: 'black' }]}>
+      <View style={[tw('flex-1 justify-center items-center px-8'), { backgroundColor: 'black', paddingTop: insets.top, paddingBottom: insets.bottom }]}>
+        <StatusBar style="light" />
         <Animated.View entering={FadeInDown}>
           <MaterialIcons name="camera-alt" size={80} color="white" style={{ marginBottom: 24 }} />
           <Text style={tw('text-white text-xl font-semibold text-center mb-6')}>
@@ -153,6 +160,7 @@ function CameraScreen() {
   if (!isComponentMounted || isCompletelyProcessing) {
     return (
       <View style={[tw('flex-1'), { backgroundColor: 'black' }]}>
+        <StatusBar style="light" />
         {isCompletelyProcessing && (
           <LoadingOverlay message="Processando e salvando dados da nota fiscal..." />
         )}
@@ -162,7 +170,7 @@ function CameraScreen() {
 
   return (
     <View style={[tw('flex-1'), { backgroundColor: 'black' }]}>
-      <StatusBar style={statusBarStyle} />
+      <StatusBar style="light" />
       
       {/* CameraView com controle de lifecycle mais rigoroso */}
       <CameraView 
@@ -182,7 +190,7 @@ function CameraScreen() {
       >
         {/* Header com controles */}
         <Animated.View entering={FadeInUp}>
-          <View style={tw('absolute top-12 left-0 right-0 flex-row-reverse justify-between items-center px-6 z-10')}>
+          <View style={[tw('absolute left-0 right-0 flex-row-reverse justify-between items-center px-6 z-10'), { top: insets.top + 12 }]}>
             <TouchableOpacity 
               style={tw('w-12 h-12 rounded-full items-center justify-center ml-4')}
               onPress={() => {
