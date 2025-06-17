@@ -1,5 +1,5 @@
 import { Produto, ResultadoAnalise } from '../types/camera';
-import { categorizarProduto, CategoriaInfo } from './categorization';
+import { categorizarProduto, CategoriaInfo } from '../../services/categorization';
 
 async function extractNFCeData(url: string): Promise<ResultadoAnalise | null> {
   try {

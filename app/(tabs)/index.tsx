@@ -8,7 +8,6 @@ import {
   Alert,
   RefreshControl,
   ScrollView,
-  Platform,
 } from "react-native";
 import { router } from "expo-router";
 import { useStorage } from '../hooks/useStorage';
@@ -36,20 +35,20 @@ const HomeScreen = () => {
   const { isWeb, isMobile, hasCamera } = usePlatformCapabilities();
   const { isDesktop } = useWebLayout();
 
-  // Focus effect hook
-  useFocusEffect(
-    React.useCallback(() => {
-      loadItems();
-    }, [loadItems])
-  );
+  // Focus effect hook - usar useCallback estável
+  const loadItemsStable = React.useCallback(() => {
+    loadItems();
+  }, [loadItems]);
 
-  // Utility function for price formatting
-  const formatarPreco = (preco: number) => {
+  useFocusEffect(loadItemsStable);
+
+  // Utility function for price formatting - memoizado
+  const formatarPreco = React.useCallback((preco: number) => {
     return preco.toLocaleString('pt-BR', {
       minimumFractionDigits: 2,
       maximumFractionDigits: 2,
     });
-  };
+  }, []);
 
   // Function to get filter label
   const getFilterLabel = React.useCallback(() => {
@@ -150,20 +149,16 @@ const HomeScreen = () => {
         subtitle: 'diferentes'
       }
     ];
-  }, [filteredItems, colors, getFilterLabel]);
+  }, [filteredItems, colors, getFilterLabel, formatarPreco]);
 
-  // If desktop, show web dashboard - AFTER all hooks
-  if (isDesktop) {
-    return <WebDashboard />;
-  }
-
-  const onRefresh = async () => {
+  // Callbacks otimizados
+  const onRefresh = React.useCallback(async () => {
     setRefreshing(true);
     await loadItems();
     setRefreshing(false);
-  };
+  }, [loadItems]);
 
-  const handleClearData = () => {
+  const handleClearData = React.useCallback(() => {
     Alert.alert(
       "Limpar Dados",
       "Tem certeza que deseja limpar todos os dados? Esta ação não pode ser desfeita.",
@@ -179,9 +174,9 @@ const HomeScreen = () => {
         }
       ]
     );
-  };
+  }, [clearStorage, loadItems]);
 
-  const handleDeleteEstabelecimento = (estabelecimento: string) => {
+  const handleDeleteEstabelecimento = React.useCallback((estabelecimento: string) => {
     Alert.alert(
       "Excluir Estabelecimento",
       `Deseja realmente excluir todos os dados de ${estabelecimento}?`,
@@ -194,9 +189,10 @@ const HomeScreen = () => {
         }
       ]
     );
-  };
+  }, [removeEstabelecimento]);
 
-  const renderFilterButton = (filter: typeof selectedFilter, label: string) => (
+  // Render functions otimizadas
+  const renderFilterButton = React.useCallback((filter: typeof selectedFilter, label: string) => (
     <TouchableOpacity
       style={[
         tw("px-4 py-2 rounded-full mr-2"),
@@ -217,9 +213,9 @@ const HomeScreen = () => {
         {label}
       </Text>
     </TouchableOpacity>
-  );
+  ), [selectedFilter, colors]);
 
-  const renderEstabelecimentoCard = ({ item: [estabelecimento, dados], index }: any) => (
+  const renderEstabelecimentoCard = React.useCallback(({ item: [estabelecimento, dados], index }: any) => (
     <Animated.View entering={FadeInDown.delay(400 + index * 100)}>
       <Card variant="elevated" style={tw('mb-3')}>
         <TouchableOpacity
@@ -258,7 +254,12 @@ const HomeScreen = () => {
         </TouchableOpacity>
       </Card>
     </Animated.View>
-  );
+  ), [colors, formatarPreco, handleDeleteEstabelecimento]);
+
+  // If desktop, show web dashboard - AFTER all hooks
+  if (isDesktop) {
+    return <WebDashboard />;
+  }
 
   if (Object.keys(groupedItems).length === 0) {
     return (

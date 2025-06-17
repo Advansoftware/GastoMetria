@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { PurchaseItem, GroupedItems } from '@/app/types/storage';
 import StorageService from '@/app/services/StorageService';
 
@@ -6,7 +6,7 @@ export function useStorage() {
   const [items, setItems] = useState<PurchaseItem[]>([]);
   const [groupedItems, setGroupedItems] = useState<GroupedItems>({});
 
-  const loadItems = async () => {
+  const loadItems = useCallback(async () => {
     try {
       const loadedItems = await StorageService.getAllPurchaseItems();
       setItems(loadedItems);
@@ -15,7 +15,7 @@ export function useStorage() {
     } catch (error) {
       console.error('Erro ao carregar itens:', error);
     }
-  };
+  }, []);
 
   const saveItem = async (newItem: PurchaseItem) => {
     try {
@@ -58,7 +58,7 @@ export function useStorage() {
 
   useEffect(() => {
     loadItems();
-  }, []);
+  }, [loadItems]);
 
   return {
     items,
