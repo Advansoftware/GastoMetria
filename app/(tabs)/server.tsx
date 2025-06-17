@@ -13,7 +13,8 @@ import {
 import { MaterialIcons } from '@expo/vector-icons';
 import QRCode from 'react-native-qrcode-svg';
 import { useTheme } from '../../contexts/ThemeContext';
-import LocalServerService from '../../services/LocalServer';
+import WebServerService from '../../services/WebServerService';
+import MobileWebServer from '../../components/ui/MobileWebServer';
 
 interface ServerStatus {
   isRunning: boolean;
@@ -23,7 +24,20 @@ interface ServerStatus {
 }
 
 export default function ServerConfigScreen() {
-  const { colors, effectiveTheme } = useTheme();
+  const { effectiveTheme } = useTheme();
+  
+  // Cores do tema
+  const colors = {
+    background: effectiveTheme === 'dark' ? '#000000' : '#ffffff',
+    text: effectiveTheme === 'dark' ? '#ffffff' : '#000000',
+    textSecondary: effectiveTheme === 'dark' ? '#a3a3a3' : '#6b7280',
+    primary: '#007AFF',
+    onPrimary: '#ffffff',
+    surface: effectiveTheme === 'dark' ? '#1a1a1a' : '#f8f9fa',
+    surfaceVariant: effectiveTheme === 'dark' ? '#2a2a2a' : '#e5e7eb',
+    border: effectiveTheme === 'dark' ? '#3a3a3a' : '#d1d5db',
+    error: '#ff4444'
+  };
   const [serverStatus, setServerStatus] = useState<ServerStatus>({
     isRunning: false,
     url: null,
@@ -37,7 +51,7 @@ export default function ServerConfigScreen() {
     updateServerStatus();
 
     // Listen for status changes
-    const unsubscribe = LocalServerService.onStatusChange((status) => {
+    const unsubscribe = WebServerService.onStatusChange((status) => {
       setServerStatus(status);
     });
 
@@ -45,8 +59,8 @@ export default function ServerConfigScreen() {
   }, []);
 
   const updateServerStatus = async () => {
-    const status = LocalServerService.getStatus();
-    const networkInfo = await LocalServerService.getNetworkInfo();
+    const status = WebServerService.getStatus();
+    const networkInfo = await WebServerService.getNetworkInfo();
     setServerStatus({ ...status, networkInfo });
   };
 
@@ -59,21 +73,15 @@ export default function ServerConfigScreen() {
     setIsLoading(true);
     try {
       if (value) {
-        const success = await LocalServerService.start();
-        if (success) {
-          Alert.alert(
-            'Servidor Iniciado',
-            'O servidor local foi iniciado com sucesso! Agora você pode conectar dispositivos na mesma rede.',
-            [{ text: 'OK' }]
-          );
-        } else {
-          Alert.alert('Erro', 'Falha ao iniciar o servidor local.');
-        }
+        await WebServerService.startServer();
+        Alert.alert(
+          'Servidor Web Iniciado! 🌐',
+          'O GastoMetria agora está disponível na web! Outros dispositivos podem acessar a interface completa através do seu IP.',
+          [{ text: 'OK' }]
+        );
       } else {
-        const success = await LocalServerService.stop();
-        if (success) {
-          Alert.alert('Servidor Parado', 'O servidor local foi parado.');
-        }
+        await WebServerService.stopServer();
+        Alert.alert('Servidor Parado', 'O servidor web foi desativado.');
       }
     } catch (error) {
       Alert.alert('Erro', 'Erro ao alterar status do servidor: ' + (error as Error).message);
@@ -89,23 +97,23 @@ export default function ServerConfigScreen() {
     }
   };
 
-  const testConnection = async () => {
+    const testConnection = async () => {
     if (!serverStatus.url) return;
 
     try {
-      const response = await fetch(`${serverStatus.url}/api/status`);
-      const data = await response.json();
+      const response = await WebServerService.handleWebRequest('/api/stats');
       
-      if (data.status === 'online') {
-        Alert.alert(
-          'Teste de Conexão',
-          `✅ Servidor funcionando normalmente!\n\nApp: ${data.appName}\nVersão: ${data.version}\nTimestamp: ${new Date(data.timestamp).toLocaleString()}`
-        );
-      } else {
-        Alert.alert('Teste de Conexão', '❌ Servidor não está respondendo adequadamente.');
-      }
+      Alert.alert(
+        'Teste de Conexão ✅',
+        `Servidor funcionando perfeitamente!\n\nEstatísticas atuais:\n• Total gasto: R$ ${JSON.parse(response.content).totalGasto?.toFixed(2)}\n• Total de itens: ${JSON.parse(response.content).totalItens}`,
+        [{ text: 'OK' }]
+      );
     } catch (error) {
-      Alert.alert('Teste de Conexão', '❌ Erro ao conectar com o servidor: ' + (error as Error).message);
+      Alert.alert(
+        'Erro no Teste ❌',
+        'Falha ao testar a conexão com o servidor: ' + (error as Error).message,
+        [{ text: 'OK' }]
+      );
     }
   };
 
@@ -282,9 +290,9 @@ export default function ServerConfigScreen() {
           
           <View style={styles.row}>
             <View style={styles.rowContent}>
-              <Text style={styles.label}>Servidor Local</Text>
+              <Text style={styles.label}>Servidor Web GastoMetria</Text>
               <Text style={styles.description}>
-                Compartilhe dados com outros dispositivos na rede
+                Seu celular servirá a versão web completa do GastoMetria para outros dispositivos
               </Text>
             </View>
             <Switch
@@ -317,7 +325,7 @@ export default function ServerConfigScreen() {
               {/* QR Code */}
               <View style={styles.qrContainer}>
                 <Text style={[styles.label, { marginBottom: 8 }]}>
-                  Escaneie com outro dispositivo:
+                  Escaneie para acessar a versão web:
                 </Text>
                 <View style={styles.qrCodeWrapper}>
                   <QRCode
@@ -389,17 +397,28 @@ export default function ServerConfigScreen() {
           <Text style={styles.sectionTitle}>Informações</Text>
           
           <Text style={styles.description}>
-            • O servidor permite que outros dispositivos na mesma rede acessem seus dados{'\n'}
-            • Use a URL fornecida em qualquer navegador ou aplicativo desktop{'\n'}
-            • Certifique-se de que todos os dispositivos estão na mesma rede Wi-Fi{'\n'}
+            • Seu celular agora serve a versão web completa do GastoMetria{'\n'}
+            • Outros dispositivos podem acessar a interface completa no navegador{'\n'}
+            • Use o QR Code ou digite a URL em qualquer navegador{'\n'}
+            • Todos os dados são carregados diretamente do seu celular{'\n'}
             • O servidor para automaticamente quando o app é fechado
           </Text>
         </View>
 
+        {/* Web Preview Section */}
+        {serverStatus.isRunning && Platform.OS !== 'web' && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Preview da Interface Web</Text>
+            <View style={{ height: 400, borderRadius: 8, overflow: 'hidden' }}>
+              <MobileWebServer isServerRunning={serverStatus.isRunning} />
+            </View>
+          </View>
+        )}
+
         {Platform.OS === 'web' && (
           <View style={styles.warning}>
             <Text style={styles.warningText}>
-              ⚠️ O servidor local não está disponível na versão web. Use a versão mobile do app.
+              ⚠️ O servidor web não está disponível na versão web. Use a versão mobile do app.
             </Text>
           </View>
         )}
