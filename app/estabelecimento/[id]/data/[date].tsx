@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, FlatList, ScrollView } from 'react-native';
-import { useLocalSearchParams, Stack, router } from 'expo-router';
+import { useLocalSearchParams, Stack } from 'expo-router';
 import { useStorage } from '../../../hooks/useStorage';
 import { MaterialIcons } from '@expo/vector-icons';
 import { Card } from '@/components/ui/Card';
@@ -10,7 +10,7 @@ import { useWebLayout } from '@/hooks/useWebLayout';
 import { DesktopDataDetailView } from '@/components/ui/DesktopDataDetailView';
 import Animated, { FadeInDown, FadeInRight } from 'react-native-reanimated';
 import { tw } from '@/utils/tailwind';
-import { StatCard } from '@/components/ui/StatsCard';
+import { StatsGrid } from '@/components/ui/StatsCard';
 import { PurchaseItem } from '@/app/types/storage';
 
 export default function DataDetailScreen() {
@@ -71,25 +71,29 @@ export default function DataDetailScreen() {
       title: 'Total da Compra',
       value: `R$ ${formatarPreco(dadosData.valor_total)}`,
       icon: 'attach-money' as const,
-      color: colors.primary
+      color: colors.primary,
+      subtitle: formatarData(decodedDate)
     },
     {
       title: 'Total de Itens',
       value: dadosData.itens.length.toString(),
       icon: 'shopping-cart' as const,
-      color: colors.secondary
-    },
-    {
-      title: 'Produtos Únicos',
-      value: itensUnicos.length.toString(),
-      icon: 'inventory' as const,
-      color: colors.accent
+      color: colors.secondary,
+      subtitle: `${itensUnicos.length} produtos únicos`
     },
     {
       title: 'Valor Médio/Item',
       value: `R$ ${formatarPreco(dadosData.valor_total / dadosData.itens.length)}`,
       icon: 'analytics' as const,
-      color: colors.warning
+      color: colors.accent,
+      subtitle: `${dadosData.itens.length} itens`
+    },
+    {
+      title: 'Produtos Únicos',
+      value: itensUnicos.length.toString(),
+      icon: 'inventory' as const,
+      color: colors.warning,
+      subtitle: 'diferentes'
     }
   ];
 
@@ -198,23 +202,12 @@ export default function DataDetailScreen() {
           </Animated.View>
 
           {/* Estatísticas */}
-          <Animated.View entering={FadeInRight.delay(200)} style={tw('px-4 mb-6')}>
-            <View style={tw('flex-row flex-wrap justify-between')}>
-              {estatisticas.map((stat, index) => (
-                <View key={stat.title} style={tw('w-[48%] mb-3')}>
-                  <StatCard
-                    title={stat.title}
-                    value={stat.value}
-                    icon={stat.icon}
-                    color={stat.color}
-                  />
-                </View>
-              ))}
-            </View>
+          <Animated.View entering={FadeInRight.delay(200)}>
+            <StatsGrid stats={estatisticas} columns={2} />
           </Animated.View>
 
           {/* Lista de produtos */}
-          <View style={tw('px-4')}>
+          <View style={tw('px-4 mb-6')}>
             <Text style={[tw('text-xl font-semibold mb-4'), { color: colors.text }]}>
               Produtos ({itensUnicos.length})
             </Text>

@@ -271,8 +271,8 @@ export default function SettingsScreen() {
           </Card>
         </Animated.View>
 
-        {/* Espaçamento final */}
-        <View style={tw('h-8')} />
+        {/* Espaçamento final para garantir que o último item seja acessível */}
+        <View style={tw('h-24')} />
       </ScrollView>
     </View>
   );

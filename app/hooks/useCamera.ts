@@ -1,4 +1,4 @@
-import { useRef, useState, useCallback } from 'react';
+import { useRef, useState, useCallback, useEffect } from 'react';
 import { Alert } from 'react-native';
 import { router } from 'expo-router';
 import { CameraView, CameraType, useCameraPermissions, BarcodeScanningResult, BarcodeSettings } from 'expo-camera';
@@ -19,13 +19,26 @@ function useCamera() {
   const [isProcessingImage, setIsProcessingImage] = useState(false);
   const [isProcessingIA, setIsProcessingIA] = useState(false);
   const [isScanning, setIsScanning] = useState(true);
-  const [isProcessing, setIsProcessing] = useState(false); // Guard para evitar processamento duplo
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [isMounted, setIsMounted] = useState(true);
+
+  // Controle de montagem do componente
+  useEffect(() => {
+    setIsMounted(true);
+    return () => {
+      setIsMounted(false);
+      setIsProcessing(false);
+      setIsProcessingImage(false);
+      setIsProcessingIA(false);
+      setIsScanning(false);
+    };
+  }, []);
 
   const toggleCameraFacing = useCallback(() => {
-    if (!isProcessing) {
+    if (!isProcessing && isMounted) {
       setFacing(current => (current === 'back' ? 'front' : 'back'));
     }
-  }, [isProcessing]);
+  }, [isProcessing, isMounted]);
 
   const handleProcessedText = useCallback(async (resultado: ProcessedText | null) => {
     if (!resultado) {
@@ -101,8 +114,8 @@ function useCamera() {
   }, [verificarNotaExistente, saveItem, salvarNotaProcessada]);
 
   const handleBarcodeScanned = useCallback(async ({ data }: BarcodeScanningResult) => {
-    // Evitar processamento duplo
-    if (isProcessing || !isScanning) {
+    // Evitar processamento duplo e verificar se o componente ainda está montado
+    if (isProcessing || !isScanning || !isMounted) {
       return;
     }
     
@@ -110,8 +123,12 @@ function useCamera() {
     setIsScanning(false);
 
     try {
+      if (!isMounted) return; // Verificação adicional
+      
       setIsProcessingImage(true);
       const qrResult = await processQRCode(data);
+      
+      if (!isMounted) return; // Verificação após processamento assíncrono
       
       if (qrResult) {
         handleProcessedText(qrResult);
@@ -119,34 +136,49 @@ function useCamera() {
       }
 
       // Se não processou via QR code, tenta com IA
+      if (!isMounted) return;
+      
       setIsProcessingIA(true);
       const analiseIA = await extrairProdutoPrincipal(data);
+      
+      if (!isMounted) return;
+      
       handleProcessedText({ 
         fullText: data, 
         analiseIA,
         blocks: []
       });
     } catch (e: unknown) {
+      if (!isMounted) return;
+      
       console.error("Erro ao processar QR code:", e);
       if (e instanceof Error) {
         Alert.alert("Aviso", e.message || "Não foi possível processar o QR code");
       } else {
         Alert.alert("Aviso", "Não foi possível processar o QR code");
       }
-      router.back(); // Volta para tela anterior em caso de erro
+      
+      // Só navegar se o componente ainda estiver montado
+      if (isMounted) {
+        router.back();
+      }
     } finally {
-      setIsProcessingImage(false);
-      setIsProcessingIA(false);
-      setIsProcessing(false);
-      // Aguardar um pouco antes de reativar o scanner para evitar scans múltiplos
-      setTimeout(() => {
-        setIsScanning(true);
-      }, 2000);
+      if (isMounted) {
+        setIsProcessingImage(false);
+        setIsProcessingIA(false);
+        setIsProcessing(false);
+        // Aguardar um pouco antes de reativar o scanner para evitar scans múltiplos
+        setTimeout(() => {
+          if (isMounted) {
+            setIsScanning(true);
+          }
+        }, 2000);
+      }
     }
-  }, [isProcessing, isScanning, processQRCode, extrairProdutoPrincipal, handleProcessedText]);
+  }, [isProcessing, isScanning, isMounted, processQRCode, extrairProdutoPrincipal, handleProcessedText]);
 
   const tirarFoto = useCallback(async () => {
-    if (!cameraRef.current || isProcessing) {
+    if (!cameraRef.current || isProcessing || !isMounted) {
       return;
     }
 
@@ -163,8 +195,13 @@ function useCamera() {
         exif: true
       });
       
+      if (!isMounted) return; // Verificação após operação assíncrona
+      
       if (photo?.uri) {
         const resultadoImagem = await processImage(photo.uri);
+        
+        if (!isMounted) return;
+        
         setIsProcessingImage(false);
         
         if (resultadoImagem) {
@@ -174,8 +211,13 @@ function useCamera() {
           } 
           // Se não tem analiseIA, processa com IA
           else if (resultadoImagem.fullText) {
+            if (!isMounted) return;
+            
             setIsProcessingIA(true);
             const analiseIA = await extrairProdutoPrincipal(resultadoImagem.fullText);
+            
+            if (!isMounted) return;
+            
             const resultado: ProcessedText = {
               ...resultadoImagem,
               analiseIA
@@ -185,6 +227,8 @@ function useCamera() {
         }
       }
     } catch (e: unknown) {
+      if (!isMounted) return;
+      
       console.error("Erro ao processar imagem:", e);
       if (e instanceof Error) {
         Alert.alert("Erro", e.message || "Não foi possível processar a imagem");
@@ -192,11 +236,13 @@ function useCamera() {
         Alert.alert("Erro", "Não foi possível processar a imagem");
       }
     } finally {
-      setIsProcessingImage(false);
-      setIsProcessingIA(false);
-      setIsProcessing(false);
+      if (isMounted) {
+        setIsProcessingImage(false);
+        setIsProcessingIA(false);
+        setIsProcessing(false);
+      }
     }
-  }, [isProcessing, processImage, extrairProdutoPrincipal, handleProcessedText]);
+  }, [isProcessing, isMounted, processImage, extrairProdutoPrincipal, handleProcessedText]);
 
   return {
     permission,
@@ -209,6 +255,7 @@ function useCamera() {
     isProcessingIA,
     isScanning,
     isProcessing,
+    isMounted,
     handleBarcodeScanned,
     barcodeScannerSettings: {
       barcodeTypes: ["qr"] satisfies BarcodeSettings["barcodeTypes"]

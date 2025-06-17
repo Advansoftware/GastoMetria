@@ -387,21 +387,20 @@ const HomeScreen = () => {
       {isMobile && hasCamera && (
         <TouchableOpacity
           style={[
-            tw('absolute bottom-5 right-5 w-14 h-14 rounded-full justify-center items-center'),
+            tw('absolute bottom-6 right-6 w-16 h-16 rounded-full justify-center items-center'),
             { 
               backgroundColor: colors.primary,
-              shadowColor: colors.shadow,
-              shadowOffset: { width: 0, height: 4 },
+              shadowColor: '#000',
+              shadowOffset: { width: 0, height: 6 },
               shadowOpacity: 0.3,
-              shadowRadius: 8,
-              elevation: 8,
+              shadowRadius: 10,
+              elevation: 12,
             }
           ]}
           onPress={() => router.push('/camera')}
+          activeOpacity={0.8}
         >
-          <View style={tw('flex-row items-center')}>
-            <MaterialIcons name="qr-code-scanner" size={24} color={colors.onPrimary} />
-          </View>
+          <MaterialIcons name="qr-code-scanner" size={28} color={colors.onPrimary} />
         </TouchableOpacity>
       )}
     </View>
