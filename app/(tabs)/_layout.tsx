@@ -63,6 +63,18 @@ export default function TabsLayout() {
       />
       
       <Tabs.Screen
+        name="server"
+        options={{
+          title: 'Servidor',
+          tabBarIcon: ({ color, size, focused }) => (
+            <View style={[tw('p-1 rounded-lg'), focused && { backgroundColor: effectiveTheme === 'dark' ? colors.primary + '30' : colors.primary + '20' }]}>
+              <MaterialIcons name="cloud" size={size} color={color} />
+            </View>
+          ),
+        }}
+      />
+      
+      <Tabs.Screen
         name="settings"
         options={{
           title: 'Configurações',

@@ -1,6 +1,7 @@
-import React, { useMemo } from 'react';
-import { View, Text, ScrollView } from 'react-native';
+import React, { useMemo, useState } from 'react';
+import { View, Text, ScrollView, TouchableOpacity, TextInput, Alert } from 'react-native';
 import { useStorage } from '@/app/hooks/useStorage';
+import { useServerConnection } from '@/hooks/useServerConnection';
 import { Colors } from '@/constants/Colors';
 import { useTheme } from '@/contexts/ThemeContext';
 import { MaterialIcons } from '@expo/vector-icons';
@@ -12,21 +13,58 @@ import { tw } from '@/utils/tailwind';
 import Animated, { FadeInDown, FadeInRight } from 'react-native-reanimated';
 
 export function WebDashboard() {
-  const { items, groupedItems } = useStorage();
+  const { items: localItems, groupedItems } = useStorage();
   const { effectiveTheme } = useTheme();
   const colors = Colors[effectiveTheme];
+  
+  // Estado para controle do servidor
+  const [dataSource, setDataSource] = useState<'local' | 'server'>('local');
+  const {
+    isConnected,
+    isLoading,
+    serverUrl,
+    serverData,
+    error,
+    setServerUrl,
+    connectToServer,
+    disconnectFromServer,
+    refreshData,
+    // Discovery features
+    isScanning,
+    foundServers,
+    scanForServers,
+    connectToFoundServer
+  } = useServerConnection();
+
+  // Usar dados locais ou do servidor baseado na seleção
+  const items = dataSource === 'server' ? serverData.items : localItems;
+
+  const handleConnect = async () => {
+    const success = await connectToServer();
+    if (success) {
+      setDataSource('server');
+      Alert.alert('Conectado!', 'Conectado com sucesso ao servidor móvel');
+    } else {
+      Alert.alert('Erro de Conexão', `Não foi possível conectar: ${error}`);
+    }
+  };
+
+  const handleDisconnect = () => {
+    disconnectFromServer();
+    setDataSource('local');
+  };
 
   const dashboardStats = useMemo(() => {
-    const totalGasto = items.reduce((sum, item) => sum + item.valor_total, 0);
+    const totalGasto = items.reduce((sum: number, item: any) => sum + item.valor_total, 0);
     const totalCompras = items.length;
-    const estabelecimentosUnicos = Object.keys(groupedItems).length;
+    const estabelecimentosUnicos = dataSource === 'server' ? serverData.stats.uniqueEstablishments || 0 : Object.keys(groupedItems).length;
     const mediaCompra = totalCompras > 0 ? totalGasto / totalCompras : 0;
 
     // Cálculo do último mês
     const umMesAtras = new Date();
     umMesAtras.setMonth(umMesAtras.getMonth() - 1);
     
-    const ultimoMes = items.filter(item => {
+    const ultimoMes = items.filter((item: any) => {
       const itemDate = new Date(item.data.split('/').reverse().join('-'));
       return itemDate >= umMesAtras;
     });
@@ -155,6 +193,141 @@ export function WebDashboard() {
             <Text style={[tw('text-xl mb-8'), { color: colors.onSurfaceVariant }]}>
               Visão geral dos seus gastos
             </Text>
+          </Animated.View>
+
+          {/* Server Connection Controls */}
+          <Animated.View entering={FadeInDown.delay(100)}>
+            <Card variant="outlined" style={tw('p-4 mb-6')}>
+              <View style={tw('flex-row items-center justify-between mb-4')}>
+                <Text style={[tw('text-lg font-semibold'), { color: colors.onSurface }]}>
+                  Fonte de Dados
+                </Text>
+                <View style={tw('flex-row items-center')}>
+                  <View style={[
+                    tw('w-3 h-3 rounded-full mr-2'),
+                    { backgroundColor: dataSource === 'server' && isConnected ? '#4CAF50' : '#F44336' }
+                  ]} />
+                  <Text style={[tw('text-sm'), { color: colors.onSurfaceVariant }]}>
+                    {dataSource === 'server' && isConnected ? 'Servidor Móvel' : 'Dados Locais'}
+                  </Text>
+                </View>
+              </View>
+              
+              {dataSource === 'local' && (
+                <View style={tw('space-y-4')}>
+                  {/* Found Servers */}
+                  {foundServers.length > 0 && (
+                    <View>
+                      <Text style={[tw('text-sm font-medium mb-2'), { color: colors.onSurface }]}>
+                        Servidores Encontrados
+                      </Text>
+                      {foundServers.map((server) => (
+                        <TouchableOpacity
+                          key={server.url}
+                          style={[
+                            tw('flex-row items-center justify-between p-3 border rounded-lg mb-2'),
+                            { 
+                              borderColor: colors.border,
+                              backgroundColor: server.status === 'online' ? colors.surfaceVariant : colors.surface
+                            }
+                          ]}
+                          onPress={() => connectToFoundServer(server.url)}
+                          disabled={isLoading || server.status === 'offline'}
+                        >
+                          <View style={tw('flex-1')}>
+                            <Text style={[tw('text-sm font-medium'), { color: colors.onSurface }]}>
+                              {server.name}
+                            </Text>
+                            <Text style={[tw('text-xs'), { color: colors.onSurfaceVariant }]}>
+                              {server.url}
+                            </Text>
+                          </View>
+                          <View style={tw('flex-row items-center')}>
+                            <View style={[
+                              tw('w-2 h-2 rounded-full mr-2'),
+                              { backgroundColor: server.status === 'online' ? '#4CAF50' : '#F44336' }
+                            ]} />
+                            <Text style={[tw('text-xs'), { color: colors.onSurfaceVariant }]}>
+                              {server.status === 'online' ? 'Online' : 'Offline'}
+                            </Text>
+                          </View>
+                        </TouchableOpacity>
+                      ))}
+                    </View>
+                  )}
+
+                  {/* Manual Connection */}
+                  <View>
+                    <Text style={[tw('text-sm font-medium mb-2'), { color: colors.onSurface }]}>
+                      Conexão Manual
+                    </Text>
+                    <View style={tw('flex-row items-center gap-4')}>
+                      <TextInput
+                        style={[
+                          tw('flex-1 border rounded-lg px-3 py-2 text-sm'),
+                          { 
+                            borderColor: colors.border,
+                            backgroundColor: colors.surface,
+                            color: colors.onSurface
+                          }
+                        ]}
+                        value={serverUrl}
+                        onChangeText={setServerUrl}
+                        placeholder="http://192.168.1.100:3000"
+                        placeholderTextColor={colors.onSurfaceVariant}
+                      />
+                      <TouchableOpacity
+                        style={[
+                          tw('px-4 py-2 rounded-lg'),
+                          { backgroundColor: colors.primary }
+                        ]}
+                        onPress={handleConnect}
+                        disabled={isLoading}
+                      >
+                        <Text style={[tw('text-sm font-medium'), { color: colors.onPrimary }]}>
+                          {isLoading ? 'Conectando...' : 'Conectar'}
+                        </Text>
+                      </TouchableOpacity>
+                    </View>
+                  </View>
+
+                  {/* Discovery Controls */}
+                  <View style={tw('flex-row items-center gap-4')}>
+                    <TouchableOpacity
+                      style={[
+                        tw('flex-1 px-4 py-2 rounded-lg border'),
+                        { borderColor: colors.border }
+                      ]}
+                      onPress={scanForServers}
+                      disabled={isScanning}
+                    >
+                      <Text style={[tw('text-sm text-center'), { color: colors.onSurface }]}>
+                        {isScanning ? 'Procurando...' : '🔍 Buscar Servidores'}
+                      </Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              )}
+
+              {dataSource === 'server' && isConnected && (
+                <View style={tw('flex-row items-center justify-between')}>
+                  <Text style={[tw('text-sm'), { color: colors.onSurfaceVariant }]}>
+                    Conectado a: {serverUrl}
+                  </Text>
+                  <TouchableOpacity
+                    style={[
+                      tw('px-4 py-2 rounded-lg border'),
+                      { borderColor: colors.border }
+                    ]}
+                    onPress={handleDisconnect}
+                  >
+                    <Text style={[tw('text-sm'), { color: colors.onSurface }]}>
+                      Desconectar
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+              )}
+            </Card>
           </Animated.View>
 
         {/* Cards de Estatísticas */}
