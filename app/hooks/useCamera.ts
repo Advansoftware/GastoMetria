@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useRef, useState, useCallback } from 'react';
 import { Alert } from 'react-native';
 import { router } from 'expo-router';
 import { CameraView, CameraType, useCameraPermissions, BarcodeScanningResult, BarcodeSettings } from 'expo-camera';
@@ -19,12 +19,15 @@ function useCamera() {
   const [isProcessingImage, setIsProcessingImage] = useState(false);
   const [isProcessingIA, setIsProcessingIA] = useState(false);
   const [isScanning, setIsScanning] = useState(true);
+  const [isProcessing, setIsProcessing] = useState(false); // Guard para evitar processamento duplo
 
-  const toggleCameraFacing = () => {
-    setFacing(current => (current === 'back' ? 'front' : 'back'));
-  };
+  const toggleCameraFacing = useCallback(() => {
+    if (!isProcessing) {
+      setFacing(current => (current === 'back' ? 'front' : 'back'));
+    }
+  }, [isProcessing]);
 
-  const handleProcessedText = async (resultado: ProcessedText | null) => {
+  const handleProcessedText = useCallback(async (resultado: ProcessedText | null) => {
     if (!resultado) {
       console.log('Nenhum resultado disponível');
       setIsScanning(true);
@@ -55,7 +58,7 @@ function useCamera() {
       return;
     }
 
-    const { estabelecimento, data, produtos, total_devido, chaveNota } = resultado.analiseIA;
+    const { estabelecimento, data, produtos, chaveNota } = resultado.analiseIA;
     
     try {
       // Verificar se a nota já foi processada
@@ -95,10 +98,17 @@ function useCamera() {
       console.error('Erro ao processar itens:', error);
       Alert.alert('Erro', 'Não foi possível salvar todos os itens');
     }
-  };
+  }, [verificarNotaExistente, saveItem, salvarNotaProcessada]);
 
-  const handleBarcodeScanned = async ({ data }: BarcodeScanningResult) => {
+  const handleBarcodeScanned = useCallback(async ({ data }: BarcodeScanningResult) => {
+    // Evitar processamento duplo
+    if (isProcessing || !isScanning) {
+      return;
+    }
+    
+    setIsProcessing(true);
     setIsScanning(false);
+
     try {
       setIsProcessingImage(true);
       const qrResult = await processQRCode(data);
@@ -127,57 +137,66 @@ function useCamera() {
     } finally {
       setIsProcessingImage(false);
       setIsProcessingIA(false);
-      setIsScanning(true);
+      setIsProcessing(false);
+      // Aguardar um pouco antes de reativar o scanner para evitar scans múltiplos
+      setTimeout(() => {
+        setIsScanning(true);
+      }, 2000);
     }
-  };
+  }, [isProcessing, isScanning, processQRCode, extrairProdutoPrincipal, handleProcessedText]);
 
-  const tirarFoto = async () => {
-    if (cameraRef.current) {
-      try {
-        setIsProcessingImage(true);
-        const photo = await cameraRef.current.takePictureAsync({
-          quality: 1,
-          base64: false,
-          isImageMirror: false,
-          skipProcessing: false,
-          imageType: 'jpg',
-          exif: true
-        });
+  const tirarFoto = useCallback(async () => {
+    if (!cameraRef.current || isProcessing) {
+      return;
+    }
+
+    try {
+      setIsProcessing(true);
+      setIsProcessingImage(true);
+      
+      const photo = await cameraRef.current.takePictureAsync({
+        quality: 1,
+        base64: false,
+        isImageMirror: false,
+        skipProcessing: false,
+        imageType: 'jpg',
+        exif: true
+      });
+      
+      if (photo?.uri) {
+        const resultadoImagem = await processImage(photo.uri);
+        setIsProcessingImage(false);
         
-        if (photo?.uri) {
-          const resultadoImagem = await processImage(photo.uri);
-          setIsProcessingImage(false);
-          
-          if (resultadoImagem) {
-            // Se já tem analiseIA, veio do QR Code
-            if (resultadoImagem.analiseIA) {
-              handleProcessedText(resultadoImagem);
-            } 
-            // Se não tem analiseIA, processa com IA
-            else if (resultadoImagem.fullText) {
-              setIsProcessingIA(true);
-              const analiseIA = await extrairProdutoPrincipal(resultadoImagem.fullText);
-              const resultado: ProcessedText = {
-                ...resultadoImagem,
-                analiseIA
-              };
-              handleProcessedText(resultado);
-            }
+        if (resultadoImagem) {
+          // Se já tem analiseIA, veio do QR Code
+          if (resultadoImagem.analiseIA) {
+            handleProcessedText(resultadoImagem);
+          } 
+          // Se não tem analiseIA, processa com IA
+          else if (resultadoImagem.fullText) {
+            setIsProcessingIA(true);
+            const analiseIA = await extrairProdutoPrincipal(resultadoImagem.fullText);
+            const resultado: ProcessedText = {
+              ...resultadoImagem,
+              analiseIA
+            };
+            handleProcessedText(resultado);
           }
         }
-      } catch (e: unknown) {
-        console.error("Erro ao processar imagem:", e);
-        if (e instanceof Error) {
-          Alert.alert("Erro", e.message || "Não foi possível processar a imagem");
-        } else {
-          Alert.alert("Erro", "Não foi possível processar a imagem");
-        }
-      } finally {
-        setIsProcessingImage(false);
-        setIsProcessingIA(false);
       }
+    } catch (e: unknown) {
+      console.error("Erro ao processar imagem:", e);
+      if (e instanceof Error) {
+        Alert.alert("Erro", e.message || "Não foi possível processar a imagem");
+      } else {
+        Alert.alert("Erro", "Não foi possível processar a imagem");
+      }
+    } finally {
+      setIsProcessingImage(false);
+      setIsProcessingIA(false);
+      setIsProcessing(false);
     }
-  };
+  }, [isProcessing, processImage, extrairProdutoPrincipal, handleProcessedText]);
 
   return {
     permission,
@@ -189,6 +208,7 @@ function useCamera() {
     isProcessingImage,
     isProcessingIA,
     isScanning,
+    isProcessing,
     handleBarcodeScanned,
     barcodeScannerSettings: {
       barcodeTypes: ["qr"] satisfies BarcodeSettings["barcodeTypes"]

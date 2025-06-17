@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { Text, View, TouchableOpacity, Platform } from 'react-native';
-import { CameraView, BarcodeSettings } from 'expo-camera';
+import { Text, View, TouchableOpacity } from 'react-native';
+import { CameraView } from 'expo-camera';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useFocusEffect, router } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
@@ -11,14 +11,10 @@ import { Card } from '@/components/ui/Card';
 import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
 import { usePlatformCapabilities } from '@/hooks/usePlatform';
 import { tw } from '@/utils/tailwind';
-import { Colors } from '@/constants/Colors';
-import { useColorScheme } from '@/hooks/useColorScheme';
 
 function CameraScreen() {
   const [statusBarStyle, setStatusBarStyle] = useState<'light' | 'dark'>('light');
-  const { isWeb, isMobile, hasCamera } = usePlatformCapabilities();
-  const colorScheme = useColorScheme() ?? 'light';
-  const colors = Colors[colorScheme];
+  const { isWeb } = usePlatformCapabilities();
   const {
     permission,
     requestPermission,
@@ -146,9 +142,7 @@ function CameraScreen() {
         ref={cameraRef}
         style={tw('flex-1 w-full h-full')}
         facing={facing} 
-        barcodeScannerSettings={{
-          barcodeTypes: ["qr"] satisfies BarcodeSettings["barcodeTypes"]
-        }}
+        barcodeScannerSettings={barcodeScannerSettings}
         onBarcodeScanned={isScanning ? handleBarcodeScanned : undefined}
       >
         {/* Header com controles */}

@@ -10,7 +10,6 @@ import { Card } from '@/components/ui/Card';
 import { WebSettingsPage } from '@/components/ui/WebSettingsPage';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { tw } from '@/utils/tailwind';
-import { usePlatformCapabilities } from '@/hooks/usePlatform';
 import { useWebLayout } from '@/hooks/useWebLayout';
 
 export default function SettingsScreen() {
@@ -19,7 +18,6 @@ export default function SettingsScreen() {
   const [darkModeEnabled, setDarkModeEnabled] = useState(false);
   const colorScheme = useColorScheme() ?? 'light';
   const colors = Colors[colorScheme];
-  const { isWeb, isMobile } = usePlatformCapabilities();
   const { isDesktop } = useWebLayout();
 
   // Se for desktop, mostrar a versão web
@@ -88,7 +86,11 @@ export default function SettingsScreen() {
 
   return (
     <View style={[tw('flex-1'), { backgroundColor: colors.background }]}>
-      <ScrollView style={tw('flex-1 px-4 pt-6')}>
+      <ScrollView 
+        style={tw('flex-1')} 
+        contentContainerStyle={tw('px-4 pt-6 pb-20')}
+        showsVerticalScrollIndicator={false}
+      >
         {/* Header */}
         <Animated.View entering={FadeInDown}>
           <Text style={[tw('text-3xl font-bold mb-2'), { color: colors.text }]}>
