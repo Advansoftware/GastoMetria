@@ -13,7 +13,7 @@ function useCamera() {
   const [facing, setFacing] = useState<CameraType>('back');
   const cameraRef = useRef<CameraView>(null);
   const { processImage } = useImageProcessing();
-  const { processarTextoComIA } = useAIProcessing();
+  const { extrairProdutoPrincipal } = useAIProcessing();
   const { processQRCode } = useQRCodeProcessing();
   const { saveItem, verificarNotaExistente, salvarNotaProcessada } = useStorage();
   const [isProcessingImage, setIsProcessingImage] = useState(false);
@@ -110,7 +110,7 @@ function useCamera() {
 
       // Se não processou via QR code, tenta com IA
       setIsProcessingIA(true);
-      const analiseIA = await processarTextoComIA(data);
+      const analiseIA = await extrairProdutoPrincipal(data);
       handleProcessedText({ 
         fullText: data, 
         analiseIA,
@@ -156,7 +156,7 @@ function useCamera() {
             // Se não tem analiseIA, processa com IA
             else if (resultadoImagem.fullText) {
               setIsProcessingIA(true);
-              const analiseIA = await processarTextoComIA(resultadoImagem.fullText);
+              const analiseIA = await extrairProdutoPrincipal(resultadoImagem.fullText);
               const resultado: ProcessedText = {
                 ...resultadoImagem,
                 analiseIA

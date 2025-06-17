@@ -1,11 +1,12 @@
-import { Text, type TextProps, StyleSheet } from 'react-native';
-
-import { useThemeColor } from '@/hooks/useThemeColor';
+import { Text, type TextProps } from 'react-native';
+import { useColorScheme } from '@/hooks/useColorScheme';
+import { Colors } from '@/constants/Colors';
+import { tw } from '@/utils/tailwind';
 
 export type ThemedTextProps = TextProps & {
   lightColor?: string;
   darkColor?: string;
-  type?: 'default' | 'title' | 'defaultSemiBold' | 'subtitle' | 'link';
+  type?: 'default' | 'title' | 'defaultSemiBold' | 'subtitle' | 'link' | 'secondary' | 'tertiary';
 };
 
 export function ThemedText({
@@ -15,46 +16,54 @@ export function ThemedText({
   type = 'default',
   ...rest
 }: ThemedTextProps) {
-  const color = useThemeColor({ light: lightColor, dark: darkColor }, 'text');
+  const colorScheme = useColorScheme() ?? 'light';
+  const colors = Colors[colorScheme];
+
+  const getColor = () => {
+    if (lightColor && colorScheme === 'light') return lightColor;
+    if (darkColor && colorScheme === 'dark') return darkColor;
+    
+    switch (type) {
+      case 'title':
+      case 'subtitle':
+      case 'defaultSemiBold':
+        return colors.onSurface;
+      case 'link':
+        return colors.primary;
+      case 'secondary':
+        return colors.textSecondary;
+      case 'tertiary':
+        return colors.textTertiary;
+      default:
+        return colors.text;
+    }
+  };
+
+  const getTypeClasses = () => {
+    switch (type) {
+      case 'title':
+        return 'text-3xl font-bold leading-8';
+      case 'subtitle':
+        return 'text-xl font-bold';
+      case 'defaultSemiBold':
+        return 'text-base leading-6 font-semibold';
+      case 'link':
+        return 'text-base leading-7';
+      case 'secondary':
+        return 'text-sm leading-5';
+      case 'tertiary':
+        return 'text-xs leading-4';
+      default:
+        return 'text-base leading-6';
+    }
+  };
 
   return (
     <Text
-      style={[
-        { color },
-        type === 'default' ? styles.default : undefined,
-        type === 'title' ? styles.title : undefined,
-        type === 'defaultSemiBold' ? styles.defaultSemiBold : undefined,
-        type === 'subtitle' ? styles.subtitle : undefined,
-        type === 'link' ? styles.link : undefined,
-        style,
-      ]}
+      style={[tw(getTypeClasses()), { color: getColor() }, style]}
       {...rest}
     />
   );
 }
 
-const styles = StyleSheet.create({
-  default: {
-    fontSize: 16,
-    lineHeight: 24,
-  },
-  defaultSemiBold: {
-    fontSize: 16,
-    lineHeight: 24,
-    fontWeight: '600',
-  },
-  title: {
-    fontSize: 32,
-    fontWeight: 'bold',
-    lineHeight: 32,
-  },
-  subtitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-  },
-  link: {
-    lineHeight: 30,
-    fontSize: 16,
-    color: '#0a7ea4',
-  },
-});
+

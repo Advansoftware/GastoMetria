@@ -1,4 +1,4 @@
-import type { AIAnalysis, ProcessedText } from '../types/camera';
+import type { ProcessedText } from '../types/camera';
 import { isNFCeUrl, extractNFCeData } from '../services/nfceService';
 import { useStorage } from './useStorage';
 import { router } from 'expo-router';
@@ -8,6 +8,7 @@ export default function useQRCodeProcessing() {
 
   const extractChaveNota = (qrCodeData: string) => {
     try {
+      console.log('QR Code data:', qrCodeData);
       const chaveMatch = qrCodeData.match(/p=([0-9]{44})/);
       return chaveMatch ? chaveMatch[1] : null;
     } catch (error) {

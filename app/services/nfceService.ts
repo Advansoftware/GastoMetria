@@ -1,4 +1,5 @@
 import { Produto, ResultadoAnalise } from '../types/camera';
+import { categorizarProduto, CategoriaInfo } from './categorization';
 
 async function extractNFCeData(url: string): Promise<ResultadoAnalise | null> {
   try {
@@ -22,11 +23,17 @@ async function extractNFCeData(url: string): Promise<ResultadoAnalise | null> {
       const valorUnitario = valorTotal / quantidade;
 
       if (!isNaN(quantidade) && !isNaN(valorTotal)) {
+        // Categoriza o produto automaticamente
+        const categoria: CategoriaInfo = await categorizarProduto(nome);
+        
         produtos.push({
           nome,
           quantidade,
           valor_unitario: Number(valorUnitario.toFixed(2)),
-          valor_pago: valorTotal
+          valor_pago: valorTotal,
+          categoria: categoria.categoria,
+          icone: categoria.icone,
+          cor: categoria.cor
         });
       }
     }

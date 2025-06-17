@@ -1,11 +1,10 @@
 import * as ImageManipulator from "expo-image-manipulator";
-import TextRecognition, { TextRecognitionScript } from "@react-native-ml-kit/text-recognition";
-import { ProcessedText } from '../types/camera';
-import useQRCodeProcessing from './useQRCodeProcessing';
+import TextRecognition, {
+  TextRecognitionScript,
+} from "@react-native-ml-kit/text-recognition";
+import { ProcessedText } from "../types/camera";
 
 const useImageProcessing = () => {
-  const { processQRCode } = useQRCodeProcessing();
-
   const processImage = async (uri: string): Promise<ProcessedText | null> => {
     try {
       const processedImage = await ImageManipulator.manipulateAsync(
@@ -19,12 +18,12 @@ const useImageProcessing = () => {
         processedImage.uri,
         TextRecognitionScript.LATIN
       );
-     
+
       if (!result || !result.text) return null;
 
       return {
         fullText: result.text,
-        blocks: result.blocks.map((block) => block.text)
+        blocks: result.blocks.map((block) => block.text),
       };
     } catch (error) {
       console.error("Erro no processamento da imagem:", error);

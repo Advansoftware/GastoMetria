@@ -1,7 +1,12 @@
 import React from 'react';
-import { View, Text, StyleSheet, ScrollView, Dimensions } from 'react-native';
+import { View, Text, ScrollView, Dimensions } from 'react-native';
 import { Select, MenuItem } from '@/components/ui/select';
 import { PurchaseItem, GroupedItems } from '@/app/types/storage';
+import { Colors } from '@/constants/Colors';
+import { useColorScheme } from '@/hooks/useColorScheme';
+import { MaterialIcons } from '@expo/vector-icons';
+import Animated, { FadeInUp, FadeInDown } from 'react-native-reanimated';
+import { tw } from '@/utils/tailwind';
 
 type StatsType = 'produtos' | 'estabelecimentos' | 'categorias' | 'datas';
 
@@ -13,6 +18,8 @@ interface ChartStatsProps {
 const ChartStats: React.FC<ChartStatsProps> = ({ items, groupedItems }) => {
   const [statsType, setStatsType] = React.useState<StatsType>('estabelecimentos');
   const [data, setData] = React.useState<Array<{ label: string; value: number }>>([]);
+  const colorScheme = useColorScheme() ?? 'light';
+  const colors = Colors[colorScheme];
 
   // Memoizar os items e groupedItems para evitar recriações desnecessárias
   const memoizedItems = React.useMemo(() => items, [items]);
@@ -68,99 +75,130 @@ const ChartStats: React.FC<ChartStatsProps> = ({ items, groupedItems }) => {
 
   const maxValue = Math.max(...data.map(item => item.value), 0);
 
+  const getBarColor = (index: number) => {
+    const colorMap = [
+      'bg-blue-500',
+      'bg-green-500', 
+      'bg-yellow-500',
+      'bg-purple-500',
+      'bg-pink-500',
+      'bg-indigo-500',
+      'bg-red-500',
+      'bg-teal-500',
+      'bg-orange-500',
+      'bg-cyan-500'
+    ];
+    return colorMap[index % colorMap.length];
+  };
+
+  const getStatsIcon = (type: StatsType) => {
+    const iconMap = {
+      estabelecimentos: 'store',
+      produtos: 'shopping-cart',
+      categorias: 'category',
+      datas: 'date-range'
+    } as const;
+    return iconMap[type];
+  };
+
   return (
-    <View style={styles.container}>
-      <Select
-        value={statsType}
-        onChange={setStatsType}
-        label="Tipo de Estatística"
-      >
-        <MenuItem label="Estabelecimentos" value="estabelecimentos" />
-        <MenuItem label="Produtos" value="produtos" />
-        <MenuItem label="Categorias" value="categorias" />
-        <MenuItem label="Por Data" value="datas" />
-      </Select>
+    <View style={[tw('rounded-xl p-4 shadow-lg'), { backgroundColor: colors.surface }]}>
+      {/* Header com seletor */}
+      <View style={tw('mb-6')}>
+        <View style={tw('flex-row items-center mb-4')}>
+          <MaterialIcons 
+            name={getStatsIcon(statsType)} 
+            size={24} 
+            color={colors.primary}
+            style={{ marginRight: 8 }}
+          />
+          <Text style={[tw('text-lg font-semibold'), { color: colors.text }]}>
+            Estatísticas
+          </Text>
+        </View>
+        
+        <Select
+          value={statsType}
+          onChange={setStatsType}
+          label="Tipo de Estatística"
+        >
+          <MenuItem label="Estabelecimentos" value="estabelecimentos" />
+          <MenuItem label="Produtos" value="produtos" />
+          <MenuItem label="Categorias" value="categorias" />
+          <MenuItem label="Por Data" value="datas" />
+        </Select>
+      </View>
 
       {data.length > 0 ? (
-        <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-          <View style={styles.chart}>
-            {data.map((item, index) => (
-              <View key={index} style={styles.barContainer}>
-                <Text style={styles.value}>R$ {item.value.toFixed(2)}</Text>
-                <View style={styles.barWrapper}>
-                  <View style={[
-                    styles.bar,
-                    { height: (item.value / maxValue) * 200 }
-                  ]} />
-                </View>
-                <Text style={styles.label} numberOfLines={2}>{item.label}</Text>
-              </View>
-            ))}
+        <Animated.View entering={FadeInUp}>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+            <View 
+              style={[tw('flex-row items-end pt-5 pb-5 mt-4'), { minWidth: Dimensions.get('window').width - 32 }]}
+            >
+              {data.map((item, index) => (
+                <Animated.View 
+                  key={index} 
+                  entering={FadeInDown.delay(index * 100)}
+                  style={tw('items-center flex-1')}
+                >
+                  {/* Valor */}
+                  <Text style={[tw('text-xs mb-1 font-medium'), { color: colors.textSecondary }]}>
+                    R$ {item.value.toFixed(2)}
+                  </Text>
+                  
+                  {/* Barra */}
+                  <View style={tw('h-48 justify-end')}>
+                    <View 
+                      style={[
+                        tw(`w-6 rounded-t-lg min-h-[4px] shadow-sm`),
+                        { 
+                          height: (item.value / maxValue) * 180,
+                          backgroundColor: colors.primary
+                        }
+                      ]}
+                    />
+                  </View>
+                  
+                  {/* Label */}
+                  <Text 
+                    style={[tw('text-xs text-center mt-2 w-16'), { color: colors.textSecondary }]}
+                    numberOfLines={2}
+                  >
+                    {item.label}
+                  </Text>
+                </Animated.View>
+              ))}
+            </View>
+          </ScrollView>
+
+          {/* Legenda resumida */}
+          <View style={[tw('mt-4 pt-4 border-t'), { borderColor: colors.border }]}>
+            <Text style={[tw('text-sm text-center'), { color: colors.textSecondary }]}>
+              Top {data.length} {statsType.charAt(0).toUpperCase() + statsType.slice(1)} • 
+              Total: R$ {data.reduce((sum, item) => sum + item.value, 0).toFixed(2)}
+            </Text>
           </View>
-        </ScrollView>
+        </Animated.View>
       ) : (
-        <View style={styles.emptyState}>
-          <Text style={styles.emptyText}>Nenhum dado disponível</Text>
-        </View>
+        <Animated.View entering={FadeInDown}>
+          <View style={tw('py-12 items-center justify-center')}>
+            <MaterialIcons 
+              name="insert-chart" 
+              size={64} 
+              color={colors.textSecondary}
+              style={{ marginBottom: 16 }}
+            />
+            <Text style={[tw('text-lg font-medium'), { color: colors.textSecondary }]}>
+              Nenhum dado disponível
+            </Text>
+            <Text style={[tw('text-sm mt-2 text-center'), { color: colors.textSecondary }]}>
+              Escaneie algumas notas fiscais para ver as estatísticas
+            </Text>
+          </View>
+        </Animated.View>
       )}
     </View>
   );
 };
-
-const styles = StyleSheet.create({
-  container: {
-    backgroundColor: 'white',
-    padding: 16,
-    borderRadius: 8,
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-  },
-  chart: {
-    flexDirection: 'row',
-    alignItems: 'flex-end',
-    paddingTop: 20,
-    paddingBottom: 20,
-    marginTop: 16,
-    minWidth: Dimensions.get('window').width - 32,
-  },
-  barContainer: {
-    alignItems: 'center',
-    flex: 1,
-  },
-  barWrapper: {
-    height: 200,
-    justifyContent: 'flex-end',
-  },
-  bar: {
-    width: 20,
-    backgroundColor: '#6750A4',
-    borderRadius: 10,
-    minHeight: 2,
-  },
-  value: {
-    fontSize: 10,
-    color: '#666',
-    marginBottom: 4,
-  },
-  label: {
-    fontSize: 10,
-    color: '#666',
-    textAlign: 'center',
-    marginTop: 8,
-    width: 60,
-  },
-  emptyState: {
-    padding: 20,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  emptyText: {
-    color: '#666',
-    fontSize: 16,
-  }
-});
 
 export default ChartStats;

@@ -1,156 +1,102 @@
 import type { AIAnalysis, Produto } from "../types/camera";
 import { openai, isDevEnv } from "../config/openai";
+import extrairDadosNotaFiscal from "../prompts/extrairDadosNotaFiscal";
+import extrairEssenciaProduto from "../prompts/extrairEssenciaProduto";
 
 const useAIProcessing = () => {
-  const processarTextoComIA = async (texto: string): Promise<AIAnalysis> => {
+  // Função para processar a nota fiscal completa
+  const processarNotaFiscal = async (texto: string): Promise<AIAnalysis> => {
     try {
       if (isDevEnv) {
-        console.log("Texto recebido:", texto);
+        console.log("Texto recebido para Nota Fiscal:", texto);
       }
 
-      const completion = await openai.chat.completions.create({
-        model: "gpt-4o-mini",
-        messages: [
-          {
-            role: "system",
-            content: `
-Você é um especialista em processar notas fiscais brasileiras. 
-Sua tarefa é extrair informações precisas e convertê-las em JSON estruturado.
+      const parametros = extrairDadosNotaFiscal(texto);
+      const completion = await openai.chat.completions.create(parametros as any);
 
-EXEMPLO DE ENTRADA:
----
-Rest. ABC  
-15/08/2023  
-ARZ 2KG - R$ 10,00  
-FEIJ 1KG - R$ 8,50  
-Total: R$ 18,50  
----
-
-EXEMPLO DE SAÍDA:
-{
-  "estabelecimento": "Restaurante ABC",
-  "data": "15/08/2023",
-  "produtos": [
-    { "nome": "Arroz", "quantidade": 2, "valor_pago": 10.00 },
-    { "nome": "Feijão", "quantidade": 1, "valor_pago": 8.50 }
-  ],
-  "total_devido": 18.50
-}
-
-📌 **REGRAS IMPORTANTES**:
-1️⃣ **Nome Completo**: Expandir todas as abreviações.  
-2️⃣ **Data Formatada**: DD/MM/AAAA.  
-3️⃣ **Produtos**:  
-   - Expanda abreviações ("ARZ" → "Arroz", "KG" → "Quilograma").  
-   - Normalize quantidades para números.  
-   - Mantenha valores com 2 casas decimais.  
-4️⃣ **Total Exato**: O valor final deve ser a soma dos produtos.  
-5️⃣ **Filtragem**: Ignore textos promocionais, cabeçalhos e rodapés.  
-6️⃣ **Saída Estritamente JSON**: Não inclua formatação extra ou explicações.
-            `,
-          },
-          {
-            role: "user",
-            content: `Analise esta nota fiscal e retorne um JSON preciso:
-
-${texto}
-
-Lembre-se:
-- Nome completo dos produtos sem abreviações
-- Valores numéricos precisos
-- Data formatada corretamente
-- Total calculado com precisão`,
-          },
-        ],
-        temperature: 0.1,
-        max_tokens: 500,
-        response_format: { type: "json_object" },
-        tools: [
-          {
-            type: "function",
-            function: {
-              name: "processar_nota",
-              description: "Extrai e formata dados de nota fiscal",
-              parameters: {
-                type: "object",
-                properties: {
-                  estabelecimento: {
-                    type: "string",
-                    description: "Nome completo do estabelecimento, sem abreviações",
-                  },
-                  data: {
-                    type: "string",
-                    pattern: "^\\d{2}/\\d{2}/\\d{4}$",
-                    description: "Data no formato DD/MM/AAAA",
-                  },
-                  produtos: {
-                    type: "array",
-                    items: {
-                      type: "object",
-                      properties: {
-                        nome: {
-                          type: "string",
-                          description: "Nome completo do produto, sem abreviações e com unidade de medida quando aplicável",
-                        },
-                        quantidade: {
-                          type: "number",
-                          description: "Quantidade como número (ex: 1, 2.5)",
-                        },
-                        valor_unitario: {
-                          type: "number",
-                          description: "Valor unitário do produto com 2 casas decimais",
-                        },
-                        valor_pago: {
-                          type: "number",
-                          description: "Valor total pago pelo produto com 2 casas decimais",
-                        },
-                      },
-                      required: ["nome", "quantidade", "valor_unitario", "valor_pago"]
-                    },
-                  },
-                  total_devido: {
-                    type: "number",
-                    description: "Valor total da nota com 2 casas decimais",
-                  },
-                },
-                required: ["estabelecimento", "data", "produtos", "total_devido"]
-              },
-            },
-          },
-        ],
-        tool_choice: { type: "function", function: { name: "processar_nota" } },
-      });
-
-      // Extraindo resposta da IA
+      // Extraindo resposta da IA para a nota fiscal
       const toolCall = completion.choices[0]?.message?.tool_calls?.[0];
       if (!toolCall?.function?.arguments) {
-        throw new Error("Resposta vazia da IA");
+        throw new Error("Resposta vazia da IA para nota fiscal");
       }
 
-      // Após receber a resposta da IA, garantir que valor_unitario existe
+      // Convertendo a resposta para JSON
       const resultado = JSON.parse(toolCall.function.arguments) as AIAnalysis;
-      
-      // Calculando valor_unitario se não existir, agora com tipo definido
+
+      // Ajustando valor_unitario se não existir
       resultado.produtos = resultado.produtos.map((produto: Produto) => ({
         ...produto,
-        valor_unitario: produto.valor_unitario || Number((produto.valor_pago / produto.quantidade).toFixed(2))
+        valor_unitario:
+          produto.valor_unitario ||
+          Number((produto.valor_pago / produto.quantidade).toFixed(2)),
       }));
 
-      // Validação extra (opcional)
-      if (!resultado.estabelecimento || !resultado.data || !resultado.produtos.length || !resultado.total_devido) {
-        throw new Error("Resposta incompleta ou malformada");
+      // Validações finais
+      if (
+        !resultado.estabelecimento ||
+        !resultado.data ||
+        !resultado.produtos.length ||
+        !resultado.total_devido
+      ) {
+        throw new Error("Resposta incompleta ou malformada na nota fiscal");
       }
 
       return resultado;
     } catch (error) {
       if (isDevEnv) {
-        console.error("Erro detalhado:", error);
+        console.error("Erro detalhado em processarNotaFiscal:", error);
       }
-      throw new Error("Falha ao analisar com IA");
+      throw new Error("Falha ao analisar nota fiscal com IA");
     }
   };
 
-  return { processarTextoComIA };
+  // Função para extrair a essência do nome principal do produto,
+  // retornando os dados no mesmo formato (AIAnalysis)
+  const extrairProdutoPrincipal = async (texto: string): Promise<AIAnalysis> => {
+    try {
+      if (isDevEnv) {
+        console.log("Texto recebido para Extrair Produto Principal:", texto);
+      }
+      const parametros = extrairEssenciaProduto(texto);
+      const completion = await openai.chat.completions.create(parametros as any);
+
+      // Extraindo resposta da IA para o nome principal do produto
+      const toolCall = completion.choices[0]?.message?.tool_calls?.[0];
+      if (!toolCall?.function?.arguments) {
+        throw new Error("Resposta vazia da IA para produto principal");
+      }
+
+      // Convertendo a resposta para JSON no mesmo formato de AIAnalysis
+      const resultado = JSON.parse(toolCall.function.arguments) as AIAnalysis;
+
+      // Ajustando valor_unitario se não existir
+      resultado.produtos = resultado.produtos.map((produto: Produto) => ({
+        ...produto,
+        valor_unitario:
+          produto.valor_unitario ||
+          Number((produto.valor_pago / produto.quantidade).toFixed(2)),
+      }));
+
+      // Validações finais
+      if (
+        !resultado.estabelecimento ||
+        !resultado.data ||
+        !resultado.produtos.length ||
+        !resultado.total_devido
+      ) {
+        throw new Error("Resposta incompleta ou malformada para produto principal");
+      }
+
+      return resultado;
+    } catch (error) {
+      if (isDevEnv) {
+        console.error("Erro detalhado em extrairProdutoPrincipal:", error);
+      }
+      throw new Error("Falha ao extrair produto principal com IA");
+    }
+  };
+
+  return { processarNotaFiscal, extrairProdutoPrincipal };
 };
 
 export default useAIProcessing;
