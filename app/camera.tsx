@@ -14,6 +14,7 @@ import { tw } from '@/utils/tailwind';
 
 function CameraScreen() {
   const [statusBarStyle, setStatusBarStyle] = useState<'light' | 'dark'>('light');
+  const [isComponentMounted, setIsComponentMounted] = useState(true);
   const { isWeb } = usePlatformCapabilities();
   const {
     permission,
@@ -26,16 +27,30 @@ function CameraScreen() {
     isProcessingIA,
     handleBarcodeScanned,
     isScanning,
+    stopScanning,
+    isCompletelyProcessing,
+    scanBlocked,
     barcodeScannerSettings,
   } = useCamera();
 
   useFocusEffect(
     React.useCallback(() => {
+      console.log('CameraScreen: Componente focado');
       setStatusBarStyle('light');
+      setIsComponentMounted(true);
+      
       return () => {
+        console.log('CameraScreen: Componente desfocado - iniciando cleanup');
         setStatusBarStyle('dark');
+        setIsComponentMounted(false);
+        
+        // Garantir que o scanner seja desabilitado quando sair da tela
+        // Isso ajuda a prevenir erros de removeView()
+        stopScanning();
+        
+        console.log('CameraScreen: Cleanup finalizado');
       };
-    }, [])
+    }, [stopScanning])
   );
 
   // Web version - show information instead of camera
@@ -134,23 +149,50 @@ function CameraScreen() {
     );
   }
 
+  // Se o componente não estiver montado OU se estiver processando, mostrar uma tela preta
+  if (!isComponentMounted || isCompletelyProcessing) {
+    return (
+      <View style={[tw('flex-1'), { backgroundColor: 'black' }]}>
+        {isCompletelyProcessing && (
+          <LoadingOverlay message="Processando e salvando dados da nota fiscal..." />
+        )}
+      </View>
+    );
+  }
+
   return (
     <View style={[tw('flex-1'), { backgroundColor: 'black' }]}>
       <StatusBar style={statusBarStyle} />
       
+      {/* CameraView com controle de lifecycle mais rigoroso */}
       <CameraView 
         ref={cameraRef}
         style={tw('flex-1 w-full h-full')}
         facing={facing} 
         barcodeScannerSettings={barcodeScannerSettings}
-        onBarcodeScanned={isScanning ? handleBarcodeScanned : undefined}
+        onBarcodeScanned={
+          isScanning && 
+          isComponentMounted && 
+          !isCompletelyProcessing && 
+          !scanBlocked
+            ? handleBarcodeScanned 
+            : undefined
+        }
+        key={`camera-${isScanning}-${isCompletelyProcessing}-${scanBlocked}`}
       >
         {/* Header com controles */}
         <Animated.View entering={FadeInUp}>
           <View style={tw('absolute top-12 left-0 right-0 flex-row-reverse justify-between items-center px-6 z-10')}>
             <TouchableOpacity 
               style={tw('w-12 h-12 rounded-full items-center justify-center ml-4')}
-              onPress={() => router.back()}
+              onPress={() => {
+                if (!isCompletelyProcessing) {
+                  console.log('CameraScreen: Botão fechar pressionado');
+                  stopScanning();
+                  setTimeout(() => router.back(), 100);
+                }
+              }}
+              disabled={isCompletelyProcessing}
             >
               <View style={[tw('w-full h-full rounded-full items-center justify-center'), { backgroundColor: 'rgba(0,0,0,0.5)' }]}>
                 <MaterialIcons name="close" size={24} color="white" />
@@ -160,6 +202,7 @@ function CameraScreen() {
             <TouchableOpacity 
               style={tw('w-12 h-12 rounded-full items-center justify-center')}
               onPress={toggleCameraFacing}
+              disabled={isCompletelyProcessing}
             >
               <View style={[tw('w-full h-full rounded-full items-center justify-center'), { backgroundColor: 'rgba(0,0,0,0.5)' }]}>
                 <MaterialIcons name="flip-camera-ios" size={24} color="white" />
@@ -194,6 +237,7 @@ function CameraScreen() {
                   leftIcon="camera"
                   onPress={tirarFoto}
                   fullWidth
+                  disabled={isCompletelyProcessing}
                 >
                   Detectar QR Code ou Texto
                 </ModernButton>
@@ -207,7 +251,7 @@ function CameraScreen() {
         </Animated.View>
 
         {/* Overlay de scan */}
-        {isScanning && (
+        {isScanning && isComponentMounted && (
           <Animated.View entering={FadeInDown}>
             <View style={tw('absolute inset-0 items-center justify-center')}>
               <View style={tw('w-64 h-64 border-4 border-white rounded-3xl opacity-50')} />
@@ -217,13 +261,14 @@ function CameraScreen() {
         )}
       </CameraView>
 
-      {isProcessingImage && (
+      {/* Loading overlays */}
+      {isCompletelyProcessing ? (
+        <LoadingOverlay message="Processando e salvando dados da nota fiscal..." />
+      ) : isProcessingImage ? (
         <LoadingOverlay message="Procurando QR Code ou processando imagem..." />
-      )}
-      
-      {isProcessingIA && (
+      ) : isProcessingIA ? (
         <LoadingOverlay message="Analisando dados com IA..." />
-      )}
+      ) : null}
     </View>
   );
 }

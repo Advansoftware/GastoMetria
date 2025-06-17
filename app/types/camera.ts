@@ -21,16 +21,17 @@ export type AIAnalysis = ResultadoAnalise;
 export interface AnaliseIA {
   estabelecimento: string;
   data: string;
-  produtos: Array<{
+  produtos: {
     nome: string;
     categoria?: string;
     quantidade?: number;
     valor_unitario?: number;
     valor_pago: number;
-  }>;
+  }[];
   total_devido: number;
   chaveNota: string;
   notaProcessada?: boolean;
+  stopScanning?: boolean;
 }
 
 export interface ProcessedText {

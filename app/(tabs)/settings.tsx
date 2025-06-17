@@ -88,8 +88,10 @@ export default function SettingsScreen() {
     <View style={[tw('flex-1'), { backgroundColor: colors.background }]}>
       <ScrollView 
         style={tw('flex-1')} 
-        contentContainerStyle={tw('px-4 pt-6 pb-20')}
+        contentContainerStyle={tw('px-4 pt-6 pb-32')}
         showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+        nestedScrollEnabled={true}
       >
         {/* Header */}
         <Animated.View entering={FadeInDown}>
@@ -272,7 +274,7 @@ export default function SettingsScreen() {
         </Animated.View>
 
         {/* Espaçamento final para garantir que o último item seja acessível */}
-        <View style={tw('h-24')} />
+        <View style={tw('h-40')} />
       </ScrollView>
     </View>
   );
