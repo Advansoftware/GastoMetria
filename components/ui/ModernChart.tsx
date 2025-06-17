@@ -124,18 +124,17 @@ export function ModernChart({
     if (type === 'bar' && data?.labels?.length) {
       // Para gráficos de barras, calcular largura baseada no comprimento dos labels
       const labels = data.labels as string[];
-      const averageLabelLength = labels.reduce((sum, label) => sum + label.length, 0) / labels.length;
       
-      // Largura base por item baseada no comprimento médio dos labels
-      const baseItemWidth = Math.max(80, averageLabelLength * 8); // 8px por caractere
-      const itemWidth = baseItemWidth + 40; // Espaçamento extra entre barras
+      // Largura fixa mais conservadora para evitar overflow
+      const baseWidth = Math.min(screenWidth - 64, 320); // Máximo 320px ou largura da tela - padding
+      const itemWidth = Math.max(60, Math.min(80, baseWidth / labels.length)); // Entre 60-80px por item
       
-      const minWidth = Math.max(350, screenWidth - 32);
-      const calculatedWidth = Math.max(minWidth, data.labels.length * itemWidth);
+      const calculatedWidth = Math.max(baseWidth, labels.length * itemWidth);
       
-      return Math.min(calculatedWidth, screenWidth * 4); // Permitindo até 4x a largura da tela
+      // Limitar a largura máxima para evitar overflow do card
+      return Math.min(calculatedWidth, screenWidth * 1.8); // Máximo 1.8x a largura da tela
     }
-    return Math.max(320, Math.min(screenWidth - 32, 400));
+    return Math.max(280, Math.min(screenWidth - 64, 360));
   };
 
   const renderMobileChart = () => {
@@ -236,8 +235,8 @@ export function ModernChart({
             // Manter labels horizontais (sem rotação)
             verticalLabelRotation: 0,
             formatYLabel: (value: string) => `R$ ${parseFloat(value).toFixed(0)}`,
-            // Aumentar padding para evitar corte dos labels
-            contentInset: { top: 20, bottom: 30, left: 15, right: 15 },
+            // Padding mais conservador para evitar overflow
+            contentInset: { top: 15, bottom: 25, left: 10, right: 10 },
           });
         
         case 'pie':
@@ -290,7 +289,9 @@ export function ModernChart({
   const needsHorizontalScroll = () => {
     if (type === 'bar' && !Array.isArray(data)) {
       const chartData = data as ChartData;
-      return chartData?.labels?.length > 2; // Se tem mais de 2 itens, ativar scroll
+      const chartWidth = getChartWidth(chartData);
+      // Só ativar scroll se o gráfico for realmente maior que o container
+      return chartWidth > (screenWidth - 64);
     }
     return false;
   };
