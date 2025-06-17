@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { View, Text, Alert, ScrollView, Switch } from "react-native";
+import { View, Text, Alert, ScrollView, Switch, TouchableOpacity } from "react-native";
 import { useStorage } from "../hooks/useStorage";
 import { router } from "expo-router";
 import { Colors } from '@/constants/Colors';
@@ -61,26 +61,28 @@ export default function SettingsScreen() {
     rightElement?: React.ReactNode;
     onPress?: () => void;
   }) => (
-    <Card variant="outlined" style={tw('mb-3')}>
-      <View style={tw('flex-row items-center justify-between p-4')}>
-        <View style={tw('flex-row items-center flex-1')}>
-          <View style={[tw('w-10 h-10 rounded-full items-center justify-center mr-3'), { backgroundColor: effectiveTheme === 'dark' ? colors.primary + '30' : colors.primary + '20' }]}>
-            <MaterialIcons name={icon} size={20} color={colors.primary} />
-          </View>
-          <View style={tw('flex-1')}>
-            <Text style={[tw('font-semibold text-base'), { color: colors.text }]}>
-              {title}
-            </Text>
-            {subtitle && (
-              <Text style={[tw('text-sm mt-1'), { color: colors.textSecondary }]}>
-                {subtitle}
+    <TouchableOpacity onPress={onPress} disabled={!onPress}>
+      <Card variant="outlined" style={tw('mb-3')}>
+        <View style={tw('flex-row items-center justify-between p-4')}>
+          <View style={tw('flex-row items-center flex-1')}>
+            <View style={[tw('w-10 h-10 rounded-full items-center justify-center mr-3'), { backgroundColor: effectiveTheme === 'dark' ? colors.primary + '30' : colors.primary + '20' }]}>
+              <MaterialIcons name={icon} size={20} color={colors.primary} />
+            </View>
+            <View style={tw('flex-1')}>
+              <Text style={[tw('font-semibold text-base'), { color: colors.text }]}>
+                {title}
               </Text>
-            )}
+              {subtitle && (
+                <Text style={[tw('text-sm mt-1'), { color: colors.textSecondary }]}>
+                  {subtitle}
+                </Text>
+              )}
+            </View>
           </View>
+          {rightElement}
         </View>
-        {rightElement}
-      </View>
-    </Card>
+      </Card>
+    </TouchableOpacity>
   );
 
   return (

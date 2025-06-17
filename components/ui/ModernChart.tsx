@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, Dimensions } from 'react-native';
+import { View, Text, Dimensions, ScrollView } from 'react-native';
 import { Colors } from '@/constants/Colors';
 import { useTheme } from '@/contexts/ThemeContext';
 import { tw } from '@/utils/tailwind';
@@ -19,11 +19,11 @@ const getScreenWidth = () => {
 
 interface ChartData {
   labels: string[];
-  datasets: Array<{
+  datasets: {
     data: number[];
     color?: (opacity: number) => string;
     strokeWidth?: number;
-  }>;
+  }[];
 }
 
 interface PieChartDataItem {
@@ -119,7 +119,24 @@ export function ModernChart({
     },
   };
 
-  const chartWidth = Math.max(300, Math.min(screenWidth - 32, 600));
+  // Calcular largura do gráfico baseado no número de itens para gráficos de barras
+  const getChartWidth = (data: any) => {
+    if (type === 'bar' && data?.labels?.length) {
+      // Para gráficos de barras, calcular largura baseada no comprimento dos labels
+      const labels = data.labels as string[];
+      const averageLabelLength = labels.reduce((sum, label) => sum + label.length, 0) / labels.length;
+      
+      // Largura base por item baseada no comprimento médio dos labels
+      const baseItemWidth = Math.max(80, averageLabelLength * 8); // 8px por caractere
+      const itemWidth = baseItemWidth + 40; // Espaçamento extra entre barras
+      
+      const minWidth = Math.max(350, screenWidth - 32);
+      const calculatedWidth = Math.max(minWidth, data.labels.length * itemWidth);
+      
+      return Math.min(calculatedWidth, screenWidth * 4); // Permitindo até 4x a largura da tela
+    }
+    return Math.max(320, Math.min(screenWidth - 32, 400));
+  };
 
   const renderMobileChart = () => {
     // Validação de dados
@@ -138,7 +155,9 @@ export function ModernChart({
       // Normalizar dados do pie chart - garantir que temos 'population'
       const normalizedPieData = pieData.map(item => ({
         ...item,
-        population: item.population || item.value || 0
+        population: item.population || item.value || 0,
+        legendFontSize: 10, // Reduzindo tamanho da fonte da legenda
+        legendFontColor: colors.textSecondary
       }));
       
       if (normalizedPieData.every(item => item.population === 0)) {
@@ -182,13 +201,14 @@ export function ModernChart({
       
       switch (type) {
         case 'line':
+          const lineChartWidth = getChartWidth(data);
           return React.createElement(LineChart, {
             data: data as ChartData,
-            width: chartWidth,
+            width: lineChartWidth,
             height,
             chartConfig,
             bezier: true,
-            style: { marginVertical: 8, borderRadius: 16 },
+            style: { borderRadius: 16 },
             withDots: true,
             withShadow: false,
             withInnerLines: showGrid,
@@ -196,32 +216,52 @@ export function ModernChart({
           });
         
         case 'bar':
+          const chartWidth = getChartWidth(data);
+          const chartData = data as ChartData;
           return React.createElement(BarChart, {
-            data: data as ChartData,
+            data: chartData,
             width: chartWidth,
-            height,
-            chartConfig,
-            style: { marginVertical: 8, borderRadius: 16 },
+            height: Math.max(height, 200), // Garantir altura mínima para barras
+            chartConfig: {
+              ...chartConfig,
+              // Ajustar tamanho da fonte das legendas baseado na largura
+              labelColor: (opacity = 1) => colors.textSecondary,
+              // Melhorar espaçamento e legibilidade
+              decimalPlaces: 0,
+            },
+            style: { borderRadius: 16 },
             showValuesOnTopOfBars: true,
             withInnerLines: showGrid,
+            fromZero: true,
+            // Manter labels horizontais (sem rotação)
+            verticalLabelRotation: 0,
+            formatYLabel: (value: string) => `R$ ${parseFloat(value).toFixed(0)}`,
+            // Aumentar padding para evitar corte dos labels
+            contentInset: { top: 20, bottom: 30, left: 15, right: 15 },
           });
         
         case 'pie':
           const pieData = data as PieChartDataItem[];
-          const normalizedPieData = pieData.map(item => ({
+          const normalizedPieData = pieData.map((item, index) => ({
             ...item,
-            population: item.population || item.value || 0
-          }));
+            population: item.population || item.value || 0,
+            legendFontSize: 9,
+            legendFontColor: colors.textSecondary,
+            name: item.name.length > 12 ? item.name.substring(0, 12) + '...' : item.name // Truncar nomes longos
+          })).slice(0, 6); // Limitar a 6 itens para evitar sobrepor legendas
           
+          const pieChartWidth = getChartWidth(data);
           return React.createElement(PieChart, {
             data: normalizedPieData,
-            width: chartWidth,
-            height,
+            width: pieChartWidth,
+            height: Math.min(height, 200), // Limitar altura do gráfico de pizza
             chartConfig,
             accessor: 'population',
             backgroundColor: 'transparent',
-            paddingLeft: '15',
-            style: { marginVertical: 8, borderRadius: 16 },
+            paddingLeft: '10',
+            center: [10, 0],
+            hasLegend: true,
+            style: { borderRadius: 16 },
           });
         
         default:
@@ -246,14 +286,36 @@ export function ModernChart({
     }
   };
 
+  // Determinar se precisa de scroll horizontal
+  const needsHorizontalScroll = () => {
+    if (type === 'bar' && !Array.isArray(data)) {
+      const chartData = data as ChartData;
+      return chartData?.labels?.length > 2; // Se tem mais de 2 itens, ativar scroll
+    }
+    return false;
+  };
+
   return (
-    <View style={[tw("rounded-2xl p-4 mx-4 my-2 shadow-lg"), { backgroundColor: colors.surface }]}>
+    <View style={[tw("rounded-2xl p-3 mx-4 my-2 shadow-lg"), { backgroundColor: colors.surface }]}>
       {title && (
-        <Text style={[tw("text-lg font-semibold mb-4 text-center"), { color: colors.text }]}>
+        <Text style={[tw("text-lg font-semibold mb-3 text-center"), { color: colors.text }]}>
           {title}
         </Text>
       )}
-      {renderMobileChart()}
+      {needsHorizontalScroll() ? (
+        <ScrollView 
+          horizontal 
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={tw("items-center")}
+          style={tw("overflow-hidden")}
+        >
+          {renderMobileChart()}
+        </ScrollView>
+      ) : (
+        <View style={tw("items-center overflow-hidden")}>
+          {renderMobileChart()}
+        </View>
+      )}
     </View>
   );
 }
