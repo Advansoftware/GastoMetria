@@ -13,7 +13,7 @@ import {
 import { MaterialIcons } from '@expo/vector-icons';
 import QRCode from 'react-native-qrcode-svg';
 import { useTheme } from '../../contexts/ThemeContext';
-import WebServerService from '../../services/WebServerService';
+import ExpoWebServerService from '../../services/ExpoWebServerService';
 import MobileWebServer from '../../components/ui/MobileWebServer';
 
 interface ServerStatus {
@@ -51,7 +51,7 @@ export default function ServerConfigScreen() {
     updateServerStatus();
 
     // Listen for status changes
-    const unsubscribe = WebServerService.onStatusChange((status) => {
+    const unsubscribe = ExpoWebServerService.onStatusChange((status) => {
       setServerStatus(status);
     });
 
@@ -59,8 +59,8 @@ export default function ServerConfigScreen() {
   }, []);
 
   const updateServerStatus = async () => {
-    const status = WebServerService.getStatus();
-    const networkInfo = await WebServerService.getNetworkInfo();
+    const status = ExpoWebServerService.getStatus();
+    const networkInfo = await ExpoWebServerService.getNetworkInfo();
     setServerStatus({ ...status, networkInfo });
   };
 
@@ -73,14 +73,14 @@ export default function ServerConfigScreen() {
     setIsLoading(true);
     try {
       if (value) {
-        await WebServerService.startServer();
+        await ExpoWebServerService.startServer();
         Alert.alert(
           'Servidor Web Iniciado! 🌐',
           'O GastoMetria agora está disponível na web! Outros dispositivos podem acessar a interface completa através do seu IP.',
           [{ text: 'OK' }]
         );
       } else {
-        await WebServerService.stopServer();
+        await ExpoWebServerService.stopServer();
         Alert.alert('Servidor Parado', 'O servidor web foi desativado.');
       }
     } catch (error) {
@@ -101,7 +101,7 @@ export default function ServerConfigScreen() {
     if (!serverStatus.url) return;
 
     try {
-      const response = await WebServerService.handleWebRequest('/api/stats');
+      const response = await ExpoWebServerService.handleWebRequest('/api/stats');
       
       Alert.alert(
         'Teste de Conexão ✅',
@@ -345,6 +345,31 @@ export default function ServerConfigScreen() {
                   📋 Copiar URL
                 </Text>
               </TouchableOpacity>
+            </View>
+          )}
+
+          {/* Aviso sobre modo de desenvolvimento */}
+          {serverStatus.error && (
+            <View style={[styles.section, { backgroundColor: colors.surfaceVariant, borderColor: '#FFA500' }]}>
+              <MaterialIcons name="info" size={24} color="#FFA500" style={{ marginBottom: 8 }} />
+              <Text style={[styles.label, { color: '#FFA500', marginBottom: 8 }]}>
+                ℹ️ Modo Desenvolvimento
+              </Text>
+              <Text style={[styles.description, { fontSize: 14 }]}>
+                {serverStatus.error}
+              </Text>
+              <View style={{ marginTop: 12, padding: 12, backgroundColor: colors.background, borderRadius: 8 }}>
+                <Text style={[styles.description, { fontWeight: '600' }]}>
+                  📱 Para servidor real:
+                </Text>
+                <Text style={styles.description}>
+                  1. Compile o APK: npx expo build:android{'\n'}
+                  2. Instale no celular{'\n'}
+                  3. Execute o app instalado{'\n'}
+                  4. Ative o servidor{'\n'}
+                  5. Acesse do computador: http://SEU_IP:3000
+                </Text>
+              </View>
             </View>
           )}
         </View>

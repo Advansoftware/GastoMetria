@@ -1,6 +1,6 @@
 import * as Network from 'expo-network';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import StorageService from '../app/services/StorageService';
+import { StorageService } from '../app/services/StorageService';
 
 interface ServerConfig {
   port: number;

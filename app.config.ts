@@ -29,9 +29,13 @@ const config = {
       package: "com.anonymous.gastometria",
       permissions: [
         "CAMERA",
-        "INTERNET"
+        "INTERNET",
+        "ACCESS_NETWORK_STATE",
+        "ACCESS_WIFI_STATE",
+        "BIND_DEVICE_ADMIN"
       ],
-      jsEngine: "hermes"
+      jsEngine: "hermes",
+      usesCleartextTraffic: true
     },
     extra: {
       openaiApiKey: process.env.OPENAI_API_KEY,
@@ -47,6 +51,9 @@ const config = {
         {
           cameraPermission: "Permitir $(PRODUCT_NAME) acessar a câmera para escanear notas fiscais e QR codes."
         }
+      ],
+      [
+        "expo-dev-client"
       ]
     ]
   }
