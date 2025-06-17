@@ -28,8 +28,7 @@ interface ChartData {
 
 interface PieChartDataItem {
   name: string;
-  population?: number;
-  value?: number;
+  population: number;
   color: string;
   legendFontColor?: string;
   legendFontSize?: number;
@@ -88,7 +87,7 @@ export function ModernChart({
   if (isWeb) {
     return (
       <View style={[
-        tw('p-4 rounded-lg mx-4 my-2'),
+        tw('p-4 rounded-lg'),
         { backgroundColor: colors.surface }
       ]}>
         {title && (
@@ -125,22 +124,6 @@ export function ModernChart({
     if (type === 'pie') {
       const pieData = data as PieChartDataItem[];
       if (!pieData || pieData.length === 0) {
-        return (
-          <View style={[tw("py-8 items-center justify-center"), { height }]}>
-            <Text style={[tw("text-center"), { color: colors.textSecondary }]}>
-              Nenhum dado disponível
-            </Text>
-          </View>
-        );
-      }
-      
-      // Normalizar dados do pie chart - garantir que temos 'population'
-      const normalizedPieData = pieData.map(item => ({
-        ...item,
-        population: item.population || item.value || 0
-      }));
-      
-      if (normalizedPieData.every(item => item.population === 0)) {
         return (
           <View style={[tw("py-8 items-center justify-center"), { height }]}>
             <Text style={[tw("text-center"), { color: colors.textSecondary }]}>
@@ -206,14 +189,8 @@ export function ModernChart({
           });
         
         case 'pie':
-          const pieData = data as PieChartDataItem[];
-          const normalizedPieData = pieData.map(item => ({
-            ...item,
-            population: item.population || item.value || 0
-          }));
-          
           return React.createElement(PieChart, {
-            data: normalizedPieData,
+            data: data as PieChartDataItem[],
             width: chartWidth,
             height,
             chartConfig,
@@ -246,7 +223,7 @@ export function ModernChart({
   };
 
   return (
-    <View style={[tw("rounded-2xl p-4 mx-4 my-2 shadow-lg"), { backgroundColor: colors.surface }]}>
+    <View style={[tw("rounded-2xl p-4 my-2 shadow-lg"), { backgroundColor: colors.surface }]}>
       {title && (
         <Text style={[tw("text-lg font-semibold mb-4 text-center"), { color: colors.text }]}>
           {title}

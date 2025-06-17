@@ -20,30 +20,30 @@ import { StatsGrid } from '@/components/ui/StatsCard';
 import { ModernButton } from '@/components/ui/ModernButton';
 import { AdaptiveCameraButton } from '@/components/ui/AdaptiveCameraButton';
 import { WebDemoData } from '@/components/ui/WebDemoData';
+import { WebDashboard } from '@/components/ui/WebDashboard';
 import Animated, { FadeInDown, FadeInRight } from 'react-native-reanimated';
 import { tw } from '@/utils/tailwind';
 import { usePlatformCapabilities } from '@/hooks/usePlatform';
+import { useWebLayout } from '@/hooks/useWebLayout';
 
 const HomeScreen = () => {
+  // IMPORTANT: All hooks must be called before any conditional rendering
   const [refreshing, setRefreshing] = useState(false);
   const [selectedFilter, setSelectedFilter] = useState<'all' | 'today' | 'week' | 'month'>('month');
   const { groupedItems, items, loadItems, clearStorage, removeEstabelecimento } = useStorage();
   const colorScheme = useColorScheme() ?? 'light';
   const colors = Colors[colorScheme];
   const { isWeb, isMobile, hasCamera } = usePlatformCapabilities();
+  const { isDesktop } = useWebLayout();
 
+  // Focus effect hook
   useFocusEffect(
     React.useCallback(() => {
       loadItems();
-    }, [])
+    }, [loadItems])
   );
 
-  const onRefresh = async () => {
-    setRefreshing(true);
-    await loadItems();
-    setRefreshing(false);
-  };
-
+  // Utility function for price formatting
   const formatarPreco = (preco: number) => {
     return preco.toLocaleString('pt-BR', {
       minimumFractionDigits: 2,
@@ -51,7 +51,8 @@ const HomeScreen = () => {
     });
   };
 
-  const getFilterLabel = () => {
+  // Function to get filter label
+  const getFilterLabel = React.useCallback(() => {
     switch (selectedFilter) {
       case 'all': return 'Todos os períodos';
       case 'today': return 'Hoje';
@@ -59,9 +60,9 @@ const HomeScreen = () => {
       case 'month': return 'Este mês';
       default: return '';
     }
-  };
+  }, [selectedFilter]);
 
-  // Filtrar itens por período
+  // Filter items by period
   const filteredItems = useMemo(() => {
     if (selectedFilter === 'all') return items;
 
@@ -86,7 +87,7 @@ const HomeScreen = () => {
     });
   }, [items, selectedFilter]);
 
-  // Agrupar itens filtrados por estabelecimento
+  // Group filtered items by establishment
   const filteredGroupedItems = useMemo(() => {
     const grouped: Record<string, any> = {};
     
@@ -112,7 +113,7 @@ const HomeScreen = () => {
     return grouped;
   }, [filteredItems]);
 
-  // Estatísticas principais
+  // Main statistics
   const mainStats = useMemo(() => {
     const totalGasto = filteredItems.reduce((sum, item) => sum + item.valor_total, 0);
     const totalCompras = filteredItems.length;
@@ -149,7 +150,18 @@ const HomeScreen = () => {
         subtitle: 'diferentes'
       }
     ];
-  }, [filteredItems, selectedFilter, colors]);
+  }, [filteredItems, colors, getFilterLabel]);
+
+  // If desktop, show web dashboard - AFTER all hooks
+  if (isDesktop) {
+    return <WebDashboard />;
+  }
+
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await loadItems();
+    setRefreshing(false);
+  };
 
   const handleClearData = () => {
     Alert.alert(

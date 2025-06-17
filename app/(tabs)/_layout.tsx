@@ -3,16 +3,18 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { View } from 'react-native';
 import { Colors } from '@/constants/Colors';
 import { useColorScheme } from '@/hooks/useColorScheme';
+import { useWebLayout } from '@/hooks/useWebLayout';
 import { tw } from '@/utils/tailwind';
 
 export default function TabsLayout() {
   const colorScheme = useColorScheme() ?? 'light';
   const colors = Colors[colorScheme];
+  const { isDesktop } = useWebLayout();
 
   return (
     <Tabs screenOptions={{
       headerShown: false,
-      tabBarStyle: {
+      tabBarStyle: isDesktop ? { display: 'none' } : {
         backgroundColor: colors.tabBackground,
         height: 70,
         borderTopWidth: 0,

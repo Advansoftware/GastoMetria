@@ -6,6 +6,8 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { Card } from '@/components/ui/Card';
 import { Colors } from '@/constants/Colors';
 import { useColorScheme } from '@/hooks/useColorScheme';
+import { useWebLayout } from '@/hooks/useWebLayout';
+import { DesktopDataDetailView } from '@/components/ui/DesktopDataDetailView';
 import Animated, { FadeInDown, FadeInRight } from 'react-native-reanimated';
 import { tw } from '@/utils/tailwind';
 import { StatCard } from '@/components/ui/StatsCard';
@@ -16,6 +18,12 @@ export default function DataDetailScreen() {
   const { groupedItems } = useStorage();
   const colorScheme = useColorScheme() ?? 'light';
   const colors = Colors[colorScheme];
+  const { isDesktop } = useWebLayout();
+
+  // Se for desktop, mostrar a versão desktop
+  if (isDesktop) {
+    return <DesktopDataDetailView />;
+  }
 
   // Decodificar a data da URL
   const decodedDate = decodeURIComponent(date as string);

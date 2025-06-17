@@ -4,7 +4,6 @@ import { Colors } from '@/constants/Colors';
 import { useColorScheme } from '@/hooks/useColorScheme';
 import { tw } from '@/utils/tailwind';
 import { usePlatformCapabilities } from '@/hooks/usePlatform';
-import { MaterialIcons } from '@expo/vector-icons';
 
 // Função para obter dimensões de forma segura
 const getScreenWidth = () => {
@@ -28,8 +27,7 @@ interface ChartData {
 
 interface PieChartDataItem {
   name: string;
-  population?: number;
-  value?: number;
+  value: number;
   color: string;
   legendFontColor?: string;
   legendFontSize?: number;
@@ -42,8 +40,6 @@ interface ModernChartProps {
   height?: number;
   showGrid?: boolean;
   animated?: boolean;
-  showLegend?: boolean;
-  colors?: 'light' | 'dark';
 }
 
 export function ModernChart({ 
@@ -52,14 +48,132 @@ export function ModernChart({
   data, 
   height = 220,
   showGrid = true,
-  animated = true,
-  showLegend = true,
-  colors: colorScheme 
+  animated = true 
 }: ModernChartProps) {
-  const colors = Colors[colorScheme ?? 'light'];
+  const colorScheme = useColorScheme() ?? 'light';
+  const colors = Colors[colorScheme];
   const { isWeb } = usePlatformCapabilities();
 
-  // IMPORTANTE: Todos os hooks devem ser chamados antes de qualquer renderização condicional
+  // Para ambiente web, vamos renderizar uma visualização mais rica
+  if (isWeb) {
+    const renderWebChart = () => {
+      if (type === 'pie') {
+        const pieData = data as PieChartDataItem[];
+        if (!pieData || pieData.length === 0) {
+          return (
+            <Text style={[tw("text-center"), { color: colors.textSecondary }]}>
+              Nenhum dado disponível
+            </Text>
+          );
+        }
+
+        const total = pieData.reduce((sum, item) => sum + item.value, 0);
+        
+        return (
+          <View style={tw("space-y-3")}>
+            {pieData.slice(0, 5).map((item, index) => {
+              const percentage = ((item.value / total) * 100).toFixed(1);
+              return (
+                <View key={index} style={tw("flex-row items-center justify-between")}>
+                  <View style={tw("flex-row items-center flex-1")}>
+                    <View 
+                      style={[
+                        tw("w-4 h-4 rounded mr-3"), 
+                        { backgroundColor: item.color || colors.primary }
+                      ]} 
+                    />
+                    <Text 
+                      style={[tw("flex-1 text-sm"), { color: colors.text }]}
+                      numberOfLines={1}
+                    >
+                      {item.name}
+                    </Text>
+                  </View>
+                  <View style={tw("ml-2")}>
+                    <Text style={[tw("text-sm font-semibold"), { color: colors.text }]}>
+                      R$ {item.value.toFixed(2)}
+                    </Text>
+                    <Text style={[tw("text-xs text-right"), { color: colors.textSecondary }]}>
+                      {percentage}%
+                    </Text>
+                  </View>
+                </View>
+              );
+            })}
+          </View>
+        );
+      } else {
+        const chartData = data as ChartData;
+        if (!chartData?.labels?.length || !chartData?.datasets?.[0]?.data?.length) {
+          return (
+            <Text style={[tw("text-center"), { color: colors.textSecondary }]}>
+              Nenhum dado disponível
+            </Text>
+          );
+        }
+
+        const labels = chartData.labels;
+        const values = chartData.datasets[0].data;
+        const maxValue = Math.max(...values);
+
+        return (
+          <View style={tw("space-y-2")}>
+            {labels.slice(-8).map((label, index) => {
+              const value = values[values.length - 8 + index] || 0;
+              const barWidth = maxValue > 0 ? (value / maxValue) * 100 : 0;
+              
+              return (
+                <View key={index} style={tw("mb-3")}>
+                  <View style={tw("flex-row justify-between items-center mb-1")}>
+                    <Text style={[tw("text-sm"), { color: colors.text }]}>
+                      {label}
+                    </Text>
+                    <Text style={[tw("text-sm font-semibold"), { color: colors.text }]}>
+                      R$ {value.toFixed(2)}
+                    </Text>
+                  </View>
+                  <View 
+                    style={[
+                      tw("h-2 rounded-full"), 
+                      { backgroundColor: colors.border }
+                    ]}
+                  >
+                    <View 
+                      style={[
+                        tw("h-2 rounded-full"),
+                        { 
+                          backgroundColor: colors.primary,
+                          width: `${barWidth}%`
+                        }
+                      ]} 
+                    />
+                  </View>
+                </View>
+              );
+            })}
+          </View>
+        );
+      }
+    };
+
+    return (
+      <View style={[tw("rounded-2xl p-4 my-2 shadow-lg"), { backgroundColor: colors.surface }]}>
+        {title && (
+          <Text style={[tw("text-lg font-semibold mb-4 text-center"), { color: colors.text }]}>
+            {title}
+          </Text>
+        )}
+        <View style={[tw("py-4"), { minHeight: height * 0.8 }]}>
+          {renderWebChart()}
+        </View>
+        <Text style={[tw("text-center text-xs mt-3"), { color: colors.textSecondary }]}>
+          💡 Visualização otimizada para web • Gráficos interativos disponíveis no mobile
+        </Text>
+      </View>
+    );
+  }
+
+  // Para mobile, usar react-native-chart-kit
   const [screenWidth, setScreenWidth] = useState(getScreenWidth());
   const [chartError, setChartError] = useState<string | null>(null);
 
@@ -69,39 +183,6 @@ export function ModernChart({
     };
     updateDimensions();
   }, []);
-
-  if (!data || (Array.isArray(data) && data.length === 0)) {
-    return (
-      <View style={[
-        tw('p-4 rounded-lg items-center justify-center'),
-        { backgroundColor: colors.surface, minHeight: height }
-      ]}>
-        <MaterialIcons name="bar-chart" size={48} color={colors.textSecondary} />
-        <Text style={[tw('text-center mt-2'), { color: colors.textSecondary }]}>
-          Nenhum dado disponível
-        </Text>
-      </View>
-    );
-  }
-
-  // Para web, mostrar uma representação simples
-  if (isWeb) {
-    return (
-      <View style={[
-        tw('p-4 rounded-lg mx-4 my-2'),
-        { backgroundColor: colors.surface }
-      ]}>
-        {title && (
-          <Text style={[tw('text-lg font-semibold mb-4'), { color: colors.text }]}>
-            {title}
-          </Text>
-        )}
-        <Text style={[tw('text-center'), { color: colors.textSecondary }]}>
-          Gráfico disponível na versão mobile
-        </Text>
-      </View>
-    );
-  }
 
   const chartConfig = {
     backgroundColor: colors.surface,
@@ -125,22 +206,6 @@ export function ModernChart({
     if (type === 'pie') {
       const pieData = data as PieChartDataItem[];
       if (!pieData || pieData.length === 0) {
-        return (
-          <View style={[tw("py-8 items-center justify-center"), { height }]}>
-            <Text style={[tw("text-center"), { color: colors.textSecondary }]}>
-              Nenhum dado disponível
-            </Text>
-          </View>
-        );
-      }
-      
-      // Normalizar dados do pie chart - garantir que temos 'population'
-      const normalizedPieData = pieData.map(item => ({
-        ...item,
-        population: item.population || item.value || 0
-      }));
-      
-      if (normalizedPieData.every(item => item.population === 0)) {
         return (
           <View style={[tw("py-8 items-center justify-center"), { height }]}>
             <Text style={[tw("text-center"), { color: colors.textSecondary }]}>
@@ -206,18 +271,12 @@ export function ModernChart({
           });
         
         case 'pie':
-          const pieData = data as PieChartDataItem[];
-          const normalizedPieData = pieData.map(item => ({
-            ...item,
-            population: item.population || item.value || 0
-          }));
-          
           return React.createElement(PieChart, {
-            data: normalizedPieData,
+            data: data as PieChartDataItem[],
             width: chartWidth,
             height,
             chartConfig,
-            accessor: 'population',
+            accessor: 'value',
             backgroundColor: 'transparent',
             paddingLeft: '15',
             style: { marginVertical: 8, borderRadius: 16 },
@@ -246,7 +305,7 @@ export function ModernChart({
   };
 
   return (
-    <View style={[tw("rounded-2xl p-4 mx-4 my-2 shadow-lg"), { backgroundColor: colors.surface }]}>
+    <View style={[tw("rounded-2xl p-4 my-2 shadow-lg"), { backgroundColor: colors.surface }]}>
       {title && (
         <Text style={[tw("text-lg font-semibold mb-4 text-center"), { color: colors.text }]}>
           {title}
@@ -256,3 +315,5 @@ export function ModernChart({
     </View>
   );
 }
+
+

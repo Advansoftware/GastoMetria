@@ -7,9 +7,11 @@ import { useColorScheme } from '@/hooks/useColorScheme';
 import { MaterialIcons } from '@expo/vector-icons';
 import { ModernButton } from '@/components/ui/ModernButton';
 import { Card } from '@/components/ui/Card';
+import { WebSettingsPage } from '@/components/ui/WebSettingsPage';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { tw } from '@/utils/tailwind';
 import { usePlatformCapabilities } from '@/hooks/usePlatform';
+import { useWebLayout } from '@/hooks/useWebLayout';
 
 export default function SettingsScreen() {
   const { clearStorage } = useStorage();
@@ -18,6 +20,12 @@ export default function SettingsScreen() {
   const colorScheme = useColorScheme() ?? 'light';
   const colors = Colors[colorScheme];
   const { isWeb, isMobile } = usePlatformCapabilities();
+  const { isDesktop } = useWebLayout();
+
+  // Se for desktop, mostrar a versão web
+  if (isDesktop) {
+    return <WebSettingsPage />;
+  }
 
   const handleClearStorage = () => {
     Alert.alert(
@@ -155,6 +163,49 @@ export default function SettingsScreen() {
               Alert.alert("Em breve", "Funcionalidade de exportação será implementada em breve.");
             }}
           />
+        </Animated.View>
+
+        {/* Serviço Web */}
+        <Animated.View entering={FadeInDown.delay(250)}>
+          <Text style={[tw('text-lg font-semibold mb-4 mt-8'), { color: colors.text }]}>
+            🌐 Acesso Desktop
+          </Text>
+
+          <Card variant="elevated" style={tw('mb-4')}>
+            <View style={tw('p-4')}>
+              <View style={tw('flex-row items-start')}>
+                <View style={[
+                  tw('w-12 h-12 rounded-full justify-center items-center mr-4'),
+                  { backgroundColor: colors.primaryContainer }
+                ]}>
+                  <MaterialIcons 
+                    name="computer" 
+                    size={24} 
+                    color={colors.onPrimaryContainer}
+                  />
+                </View>
+                <View style={tw('flex-1')}>
+                  <Text style={[tw('text-lg font-semibold mb-2'), { color: colors.text }]}>
+                    Dashboard Web
+                  </Text>
+                  <Text style={[tw('text-sm mb-4 leading-5'), { color: colors.textSecondary }]}>
+                    Acesse seus dados através do navegador no computador. 
+                    Execute o comando abaixo no terminal para iniciar o servidor:
+                  </Text>
+                  
+                  <View style={[tw('p-3 bg-gray-100 rounded-lg mb-4'), { backgroundColor: colors.surfaceVariant }]}>
+                    <Text style={[tw('font-mono text-xs'), { color: colors.text }]}>
+                      npm run web
+                    </Text>
+                  </View>
+                  
+                  <Text style={[tw('text-xs'), { color: colors.textSecondary }]}>
+                    Depois acesse: http://localhost:8081 no seu navegador
+                  </Text>
+                </View>
+              </View>
+            </View>
+          </Card>
         </Animated.View>
 
         {/* Sobre */}

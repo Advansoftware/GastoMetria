@@ -1,236 +1,133 @@
-import React, { useState, useEffect, useMemo } from 'react';
-import { View, ScrollView, Text, RefreshControl } from 'react-native';
+import React, { useState, useMemo } from 'react';
+import { ScrollView, Text, RefreshControl } from 'react-native';
 import { useStorage } from '../hooks/useStorage';
 import { useFocusEffect } from 'expo-router';
 import { Colors } from '@/constants/Colors';
 import { useColorScheme } from '@/hooks/useColorScheme';
 import { ModernChart } from '@/components/ui/ModernChart';
-import { StatsGrid, StatCard } from '@/components/ui/StatsCard';
+import { StatsGrid } from '@/components/ui/StatsCard';
 import { Card } from '@/components/ui/Card';
 import { Picker } from '@react-native-picker/picker';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { tw } from '@/utils/tailwind';
-import { usePlatformCapabilities } from '@/hooks/usePlatform';
-
-interface ChartDataItem {
-  name: string;
-  value: number;
-  color: string;
-  legendFontColor?: string;
-  legendFontSize?: number;
-}
+import { useWebLayout } from '@/hooks/useWebLayout';
+import { WebReportsPage } from '@/components/ui/WebReportsPage';
 
 export default function RelatorioScreen() {
-  const { items, groupedItems, loadItems } = useStorage();
+  // IMPORTANT: All hooks must be called before any conditional rendering
+  const { items, loadItems } = useStorage();
   const [refreshing, setRefreshing] = useState(false);
   const [timeFilter, setTimeFilter] = useState<'7d' | '30d' | '3m' | 'all'>('30d');
   const colorScheme = useColorScheme() ?? 'light';
   const colors = Colors[colorScheme];
-  const { isWeb, isMobile } = usePlatformCapabilities();
+  const { isDesktop } = useWebLayout();
 
-  const loadItemsRef = React.useRef(loadItems);
-
-  React.useEffect(() => {
-    loadItemsRef.current = loadItems;
-  }, [loadItems]);
-
+  // Focus effect hook
   useFocusEffect(
     React.useCallback(() => {
-      loadItemsRef.current();
-    }, [])
+      loadItems();
+    }, [loadItems])
   );
 
-  const onRefresh = async () => {
-    setRefreshing(true);
-    await loadItems();
-    setRefreshing(false);
-  };
-
-  // Filtrar itens por período
+  // Filter items by time period
   const filteredItems = useMemo(() => {
     if (timeFilter === 'all') return items;
 
     const now = new Date();
-    const cutoffDate = new Date();
+    let startDate: Date;
 
     switch (timeFilter) {
       case '7d':
-        cutoffDate.setDate(now.getDate() - 7);
+        startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
         break;
       case '30d':
-        cutoffDate.setDate(now.getDate() - 30);
+        startDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
         break;
       case '3m':
-        cutoffDate.setMonth(now.getMonth() - 3);
+        startDate = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
         break;
+      default:
+        return items;
     }
 
     return items.filter(item => {
       const itemDate = new Date(item.data.split('/').reverse().join('-'));
-      return itemDate >= cutoffDate;
+      return itemDate >= startDate;
     });
   }, [items, timeFilter]);
 
-  // Estatísticas principais
+  // Main statistics
   const mainStats = useMemo(() => {
     const totalGasto = filteredItems.reduce((sum, item) => sum + item.valor_total, 0);
-    const totalItens = filteredItems.length;
-    const mediaCompra = filteredItems.length > 0 ? totalGasto / filteredItems.length : 0;
+    const totalCompras = filteredItems.length;
+    const mediaCompra = totalCompras > 0 ? totalGasto / totalCompras : 0;
     const estabelecimentosUnicos = new Set(filteredItems.map(item => item.estabelecimento)).size;
-
-    // Cálculo de tendência (comparando com período anterior)
-    const previousPeriodItems = items.filter(item => {
-      const itemDate = new Date(item.data.split('/').reverse().join('-'));
-      const now = new Date();
-      let startDate = new Date();
-      let endDate = new Date();
-
-      switch (timeFilter) {
-        case '7d':
-          endDate.setDate(now.getDate() - 7);
-          startDate.setDate(now.getDate() - 14);
-          break;
-        case '30d':
-          endDate.setDate(now.getDate() - 30);
-          startDate.setDate(now.getDate() - 60);
-          break;
-        case '3m':
-          endDate.setMonth(now.getMonth() - 3);
-          startDate.setMonth(now.getMonth() - 6);
-          break;
-        default:
-          return false;
-      }
-
-      return itemDate >= startDate && itemDate < endDate;
-    });
-
-    const previousTotal = previousPeriodItems.reduce((sum, item) => sum + item.valor_total, 0);
-    const trend = previousTotal > 0 ? ((totalGasto - previousTotal) / previousTotal) * 100 : 0;
 
     return [
       {
         title: 'Total Gasto',
         value: `R$ ${totalGasto.toFixed(2)}`,
         icon: 'attach-money' as const,
-        color: colors.primary,
-        trend: trend > 0 ? 'up' as const : trend < 0 ? 'down' as const : 'neutral' as const,
-        trendValue: `${Math.abs(trend).toFixed(1)}%`
+        color: colors.primary
       },
       {
         title: 'Compras',
-        value: filteredItems.length.toString(),
+        value: totalCompras.toString(),
         icon: 'shopping-cart' as const,
         color: colors.secondary,
         subtitle: `${estabelecimentosUnicos} estabelecimentos`
       },
       {
-        title: 'Média por Compra',
+        title: 'Média/Compra',
         value: `R$ ${mediaCompra.toFixed(2)}`,
         icon: 'timeline' as const,
         color: colors.accent
       },
       {
-        title: 'Total de Itens',
-        value: totalItens.toString(),
-        icon: 'inventory' as const,
-        color: colors.warning
+        title: 'Categorias',
+        value: new Set(filteredItems.map(item => item.categoria)).size.toString(),
+        icon: 'category' as const,
+        color: colors.warning,
+        subtitle: 'diferentes'
       }
     ];
-  }, [filteredItems, items, timeFilter, colors]);
+  }, [filteredItems, colors]);
 
-  // Dados para gráfico de gastos por categoria
+  // Category chart data
   const categoryData = useMemo(() => {
-    if (filteredItems.length === 0) {
-      return [];
-    }
+    if (filteredItems.length === 0) return [];
 
-    // Paleta de cores para diferentes categorias
     const categoryColors = [
       colors.primary,
       colors.secondary, 
       colors.accent,
       colors.warning,
-      '#EC4899', // Pink
-      '#10B981', // Emerald
-      '#F59E0B', // Amber
-      '#8B5CF6', // Violet
-      '#EF4444', // Red
-      '#06B6D4', // Cyan
+      '#EC4899',
+      '#10B981',
+      '#F59E0B',
+      '#8B5CF6'
     ];
 
-    const categoryTotals: Record<string, { total: number; color: string }> = {};
+    const categoryTotals: Record<string, number> = {};
 
-    filteredItems.forEach((item, index) => {
+    filteredItems.forEach(item => {
       const categoria = item.categoria || 'Outros';
-      if (!categoryTotals[categoria]) {
-        const colorIndex = Object.keys(categoryTotals).length % categoryColors.length;
-        categoryTotals[categoria] = { 
-          total: 0, 
-          color: categoryColors[colorIndex] 
-        };
-      }
-      categoryTotals[categoria].total += item.valor_total;
+      categoryTotals[categoria] = (categoryTotals[categoria] || 0) + item.valor_total;
     });
 
-    const entries = Object.entries(categoryTotals);
-    if (entries.length === 0) {
-      return [];
-    }
-
-    return entries
-      .map(([name, data]) => ({
+    return Object.entries(categoryTotals)
+      .map(([name, value], index) => ({
         name,
-        value: data.total,
-        color: data.color,
+        value,
+        color: categoryColors[index % categoryColors.length],
         legendFontColor: colors.text,
         legendFontSize: 12,
       }))
       .sort((a, b) => b.value - a.value)
-      .slice(0, 8); // Top 8 categorias
+      .slice(0, 8);
   }, [filteredItems, colors]);
 
-  // Dados para gráfico de tendência temporal
-  const timelineData = useMemo(() => {
-    if (filteredItems.length === 0) {
-      return { labels: [], datasets: [{ data: [] }] };
-    }
-
-    const dailyTotals: Record<string, number> = {};
-
-    filteredItems.forEach(item => {
-      const date = item.data;
-      dailyTotals[date] = (dailyTotals[date] || 0) + item.valor_total;
-    });
-
-    const sortedDates = Object.keys(dailyTotals).sort((a, b) => {
-      const dateA = new Date(a.split('/').reverse().join('-'));
-      const dateB = new Date(b.split('/').reverse().join('-'));
-      return dateA.getTime() - dateB.getTime();
-    });
-
-    if (sortedDates.length === 0) {
-      return { labels: [], datasets: [{ data: [] }] };
-    }
-
-    const labels = sortedDates.map(date => {
-      const [day, month] = date.split('/');
-      return `${day}/${month}`;
-    });
-
-    const data = sortedDates.map(date => dailyTotals[date]);
-
-    return {
-      labels: labels.slice(-10), // Últimos 10 pontos
-      datasets: [{
-        data: data.slice(-10),
-        color: (opacity = 1) => colors.primary,
-        strokeWidth: 3,
-      }]
-    };
-  }, [filteredItems, colors]);
-
-  // Dados para gráfico de estabelecimentos
+  // Store chart data
   const storeData = useMemo(() => {
     if (filteredItems.length === 0) {
       return { labels: [], datasets: [{ data: [] }] };
@@ -242,22 +139,34 @@ export default function RelatorioScreen() {
       storeTotals[item.estabelecimento] = (storeTotals[item.estabelecimento] || 0) + item.valor_total;
     });
 
-    const labels = Object.keys(storeTotals).slice(0, 6); // Top 6 estabelecimentos
-    
-    if (labels.length === 0) {
-      return { labels: [], datasets: [{ data: [] }] };
-    }
+    const sortedEntries = Object.entries(storeTotals)
+      .sort(([,a], [,b]) => b - a)
+      .slice(0, 6);
 
-    const data = labels.map(store => storeTotals[store]);
+    const labels = sortedEntries.map(([name]) => 
+      name.length > 15 ? name.substring(0, 15) + '...' : name
+    );
+    const data = sortedEntries.map(([,value]) => value);
 
     return {
-      labels: labels.map(name => name.length > 15 ? name.substring(0, 15) + '...' : name),
+      labels,
       datasets: [{
         data,
         color: (opacity = 1) => colors.secondary,
       }]
     };
   }, [filteredItems, colors]);
+
+  // If desktop, show web reports page - AFTER all hooks
+  if (isDesktop) {
+    return <WebReportsPage />;
+  }
+
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await loadItems();
+    setRefreshing(false);
+  };
 
   return (
     <ScrollView 
@@ -299,28 +208,14 @@ export default function RelatorioScreen() {
         </Animated.View>
       ) : (
         <>
-          {/* Estatísticas principais */}
+          {/* Main Statistics */}
           <Animated.View entering={FadeInDown.delay(200)}>
             <StatsGrid stats={mainStats} columns={2} />
           </Animated.View>
 
-          {/* Gráfico de tendência temporal */}
-          {timelineData.labels && timelineData.labels.length > 1 && 
-           timelineData.datasets && timelineData.datasets[0] && 
-           timelineData.datasets[0].data && timelineData.datasets[0].data.length > 1 && (
-            <Animated.View entering={FadeInDown.delay(300)}>
-              <ModernChart
-                title="Tendência de Gastos"
-                type="line"
-                data={timelineData}
-                height={200}
-              />
-            </Animated.View>
-          )}
-
-          {/* Gráfico de gastos por categoria */}
+          {/* Category Chart */}
           {categoryData && categoryData.length > 0 && (
-            <Animated.View entering={FadeInDown.delay(400)}>
+            <Animated.View entering={FadeInDown.delay(300)}>
               <ModernChart
                 title="Gastos por Categoria"
                 type="pie"
@@ -330,11 +225,9 @@ export default function RelatorioScreen() {
             </Animated.View>
           )}
 
-          {/* Gráfico de gastos por estabelecimento */}
-          {storeData.labels && storeData.labels.length > 0 && 
-           storeData.datasets && storeData.datasets[0] && 
-           storeData.datasets[0].data && storeData.datasets[0].data.length > 0 && (
-            <Animated.View entering={FadeInDown.delay(500)}>
+          {/* Store Chart */}
+          {storeData.labels && storeData.labels.length > 0 && (
+            <Animated.View entering={FadeInDown.delay(400)}>
               <ModernChart
                 title="Gastos por Estabelecimento"
                 type="bar"
@@ -344,8 +237,8 @@ export default function RelatorioScreen() {
             </Animated.View>
           )}
 
-          {/* Insights adicionais */}
-          <Animated.View entering={FadeInDown.delay(600)}>
+          {/* Insights */}
+          <Animated.View entering={FadeInDown.delay(500)}>
             <Card variant="elevated" style={tw('mx-4 mt-4 mb-8')}>
               <Text style={[tw('text-xl font-semibold mb-3'), { color: colors.text }]}>
                 Insights
@@ -357,17 +250,9 @@ export default function RelatorioScreen() {
                 </Text>
               )}
               
-              {filteredItems.length > 0 && (
+              {storeData.labels.length > 0 && (
                 <Text style={[tw('text-sm mb-2 leading-5'), { color: colors.textSecondary }]}>
-                  • Estabelecimento favorito: {Object.keys(
-                    filteredItems.reduce((acc, item) => {
-                      acc[item.estabelecimento] = (acc[item.estabelecimento] || 0) + 1;
-                      return acc;
-                    }, {} as Record<string, number>)
-                  ).sort((a, b) => 
-                    filteredItems.filter(item => item.estabelecimento === b).length - 
-                    filteredItems.filter(item => item.estabelecimento === a).length
-                  )[0]}
+                  • Estabelecimento favorito: {storeData.labels[0]}
                 </Text>
               )}
             </Card>

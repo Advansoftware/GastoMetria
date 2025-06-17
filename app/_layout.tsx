@@ -20,8 +20,8 @@ export default function Layout() {
             }
           }} 
         />
-        <Stack.Screen name="estabelecimento/[id]" options={{ headerShown: true, title: 'Estabelecimento' }} />
-        <Stack.Screen name="estabelecimento/[id]/data/[date]" options={{ headerShown: true, title: 'Detalhes da Compra' }} />
+        <Stack.Screen name="estabelecimento/[id]" options={{ headerShown: false, title: 'Estabelecimento' }} />
+        <Stack.Screen name="estabelecimento/[id]/data/[date]" options={{ headerShown: false, title: 'Detalhes da Compra' }} />
       </Stack>
     </View>
   );
